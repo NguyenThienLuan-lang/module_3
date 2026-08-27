@@ -1,0 +1,7 @@
+{
+  "name": "DailySip - Gợi Ý Đồ Uống & Đặt Ship",
+  "description": "Ứng dụng gợi ý đồ uống và thức ăn dinh dưỡng cá nhân hóa theo tâm trạng, trạng thái cơ thể, hỗ trợ tìm quán lân cận và đặt ship nhanh chóng.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
