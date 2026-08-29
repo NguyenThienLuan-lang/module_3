@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, MapPin, ShoppingBag, BookOpen, Plus, Heart, Flame, Coffee, Droplets, CheckCircle2, ChevronRight, ShieldCheck } from 'lucide-react';
+import { Sparkles, MapPin, ShoppingBag, BookOpen, Plus, Heart, Flame, Clock, Coffee, Droplets, CheckCircle2, ChevronRight, ShieldCheck } from 'lucide-react';
 import { Drink, AIAdvice } from '../types';
 
 interface RecommendationViewProps {
@@ -34,6 +34,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 <span>Nhận Định Từ AI Dinh Dưỡng DailySip</span>
               </div>
               <button
+                type="button"
                 onClick={onRetakeCheckIn}
                 className="text-xs text-[#cfc8bf] hover:text-white underline underline-offset-2 cursor-pointer"
               >
@@ -55,9 +56,11 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
 
               <div className="bg-white/5 rounded-xl p-3 border border-white/10">
                 <span className="text-[#f5d0c5] font-semibold flex items-center gap-1.5 mb-1">
-                  <Coffee className="w-3.5 h-3.5 text-[#d98b72]" /> Kiểm soát Cafein:
+                  <Clock className="w-3.5 h-3.5 text-[#d98b72]" /> Thời điểm uống vàng:
                 </span>
-                <p className="text-[#cfc8bf] leading-relaxed">{aiAnalysis.caffeineAdvice}</p>
+                <p className="text-[#cfc8bf] leading-relaxed">
+                  {aiAnalysis.timingAdvice || 'Nên uống sau bữa ăn 30-45 phút hoặc trước 16h chiều để cơ thể chuyển hóa năng lượng tốt nhất.'}
+                </p>
               </div>
 
               <div className="bg-white/5 rounded-xl p-3 border border-white/10">
@@ -67,17 +70,39 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 <p className="text-[#cfc8bf] leading-relaxed">{aiAnalysis.sugarAdvice}</p>
               </div>
             </div>
+
+            {/* Dedicated Allergy Safety Guard Banner */}
+            {aiAnalysis.allergyNotice && (
+              <div className="mt-3.5 p-3.5 rounded-2xl bg-white/10 border border-[#d98b72]/40 backdrop-blur-md flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#d98b72]/30 text-[#fce8e6] flex items-center justify-center shrink-0 mt-0.5 border border-[#d98b72]/50 shadow-xs">
+                  <ShieldCheck className="w-4 h-4 text-[#f5d0c5]" />
+                </div>
+                <div className="flex-1 text-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-[#fce8e6] mb-0.5">
+                    <span>🛡️ Kiểm Tra An Toàn Dị Ứng & Kiêng Cữ (Allergy Guard):</span>
+                  </div>
+                  <p className="text-[#eaddcf] leading-relaxed">
+                    {aiAnalysis.allergyNotice}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Section title */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-xl font-bold text-[#2c2722] flex items-center gap-2">
-            <span>✨</span> Top 5 Đồ Uống Khuyên Dùng Cho Bạn
-          </h3>
-          <p className="text-xs text-[#8c827a] mt-0.5">Xếp hạng theo độ tương thích với thể trạng và mục tiêu hôm nay</p>
+      {/* Group Order Tip Banner */}
+      <div className="bg-[#f2ece2] border border-[#ded5c7] rounded-2xl p-3.5 flex items-center justify-between gap-3 text-xs mb-6 shadow-2xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-[#5e7e66]/15 text-[#5e7e66] flex items-center justify-center shrink-0">
+            <ShoppingBag className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="font-bold text-[#2c2722] block">Đặt ship cho nhóm & bạn bè:</span>
+            <p className="text-[#6b6257] text-[11px] mt-0.5">
+              Bấm <strong>"+ Thêm Vào Giỏ Hàng"</strong> ở mỗi ly để tùy chỉnh mức đường, đá và topping riêng cho từng người bạn!
+            </p>
+          </div>
         </div>
       </div>
 
@@ -211,19 +236,22 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
 
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                       <button
+                        type="button"
                         onClick={() => onSelectDrinkForStores(drink)}
-                        className="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold text-[#5e7e66] bg-[#eef4f0] hover:bg-[#e2ede5] border border-[#7d9d85]/30 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                        className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#5e7e66] bg-[#eef4f0] hover:bg-[#e2ede5] border border-[#7d9d85]/30 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <MapPin className="w-3.5 h-3.5 text-[#5e7e66]" />
-                        <span>Xem Quán Gần Đây</span>
+                        <span>Xem Quán Gần</span>
                       </button>
 
                       <button
+                        type="button"
                         onClick={() => onQuickOrder(drink)}
-                        className="flex-1 sm:flex-initial px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7d9d85] to-[#5e7e66] hover:from-[#6c8c74] hover:to-[#4e6c55] transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                        className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7d9d85] to-[#5e7e66] hover:from-[#6c8c74] hover:to-[#4e6c55] transition-all shadow-md shadow-[#5e7e66]/20 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                        title="Tùy chỉnh đường/đá/topping và thêm vào giỏ hàng"
                       >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>Đặt Ship Ngay</span>
+                        <ShoppingBag className="w-4 h-4" />
+                        <span>+ Thêm Vào Giỏ Hàng</span>
                       </button>
                     </div>
                   </div>

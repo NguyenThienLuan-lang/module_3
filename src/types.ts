@@ -190,6 +190,66 @@ export interface HydrationLogItem {
 export interface AIAdvice {
   summary: string;
   wellnessTip: string;
-  caffeineAdvice: string;
+  timingAdvice?: string;
   sugarAdvice: string;
+  allergyNotice?: string;
 }
+
+export type MembershipRank = 'bronze' | 'silver' | 'gold' | 'diamond';
+
+export interface UserVoucher {
+  id: string;
+  code: string;
+  title: string;
+  discountText: string;
+  minOrderVND: number;
+  expiryDate: string;
+  description: string;
+  minRank: MembershipRank;
+  isUnlocked: boolean;
+}
+
+export interface LinkedPayment {
+  id: string;
+  type: 'momo' | 'bank' | 'zalopay';
+  name: string;
+  accountNumber: string;
+  isDefault: boolean;
+  logo: string;
+}
+
+export interface UserProfile {
+  name: string;
+  phone: string;
+  email: string;
+  avatar: string;
+  totalOrdersCount: number;
+  rank: MembershipRank;
+  linkedPayments: LinkedPayment[];
+}
+
+export type OrderHistoryStatus = 'delivered' | 'returned' | 'cancelled';
+
+export interface OrderReview {
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
+export interface PastOrder {
+  id: string;
+  orderCode: string;
+  createdAt: string;
+  status: OrderHistoryStatus;
+  items: CartItem[];
+  subtotal: number;
+  deliveryFee: number;
+  discount: number;
+  totalAmount: number;
+  deliveryAddress: string;
+  paymentMethod: string;
+  storeName: string;
+  review?: OrderReview;
+}
+
+

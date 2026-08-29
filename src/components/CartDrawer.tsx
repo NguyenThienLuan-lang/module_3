@@ -97,7 +97,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
               <div>
                 <h3 className="font-bold text-[#2c2722] text-base">Giỏ Hàng Của Bạn</h3>
-                <span className="text-xs text-[#8c827a]">{cartItems.length} món đồ uống</span>
+                <span className="text-xs text-[#5e7e66] font-semibold">
+                  {cartItems.length} món • Đặt cho nhóm bạn bè
+                </span>
               </div>
             </div>
             <button

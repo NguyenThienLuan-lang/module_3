@@ -1,8 +1,70 @@
-node_modules/
-build/
-dist/
-coverage/
-.DS_Store
-*.log
-.env*
+# ==========================================
+# 1. Bảo mật API Key & Môi trường (Secrets)
+# ==========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.*
 !.env.example
+
+# ==========================================
+# 2. Thư viện & Dependencies
+# ==========================================
+node_modules/
+.pnp
+.pnp.js
+
+# ==========================================
+# 3. Bản dựng đóng gói (Build Outputs)
+# ==========================================
+dist/
+build/
+dist-ssr/
+out/
+coverage/
+*.tsbuildinfo
+
+# ==========================================
+# 4. Nhật ký lỗi (Logs & Debugging)
+# ==========================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# 5. Cấu hình trình soạn thảo (IDE & Editors)
+# ==========================================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ==========================================
+# 6. File rác hệ điều hành (Windows / macOS)
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# ==========================================
+# 7. File tạm (Scratch & Temp)
+# ==========================================
+*.tmp
+*.temp
+.temp/
+.scratch/

@@ -242,14 +242,19 @@ export const CheckInSurvey: React.FC<CheckInSurveyProps> = ({ onSubmit, isLoadin
 
         {/* Section 3: Hard Allergy Filters (Loại bỏ tuyệt đối) */}
         <div className="bg-gradient-to-r from-[#fdf3f0] to-[#fbf0ec] rounded-2xl p-5 sm:p-6 shadow-xs border border-[#e8cfc8]">
-          <div className="flex items-center gap-2 mb-3">
-            <ShieldAlert className="w-5 h-5 text-[#c45a4b]" />
-            <h3 className="text-base font-bold text-[#4a231f]">
-              Bộ lọc Dị ứng & Kiêng cữ (Hard Filter)
-            </h3>
+          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-[#c45a4b]" />
+              <h3 className="text-base font-bold text-[#4a231f]">
+                Bộ lọc Dị ứng & Kiêng cữ (Hard Filter)
+              </h3>
+            </div>
+            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#c45a4b]/15 text-[#8c2a1e] border border-[#c45a4b]/30">
+              {allergies.length > 0 ? `Đã chọn: ${allergies.length} dị ứng / kiêng cữ` : 'Có thể chọn nhiều mục'}
+            </span>
           </div>
           <p className="text-xs text-[#8c4c43] mb-4">
-            Được kiểm tra nghiêm ngặt: Hệ thống tự động loại bỏ 100% thức uống có thành phần gây dị ứng cho bạn.
+            Được kiểm tra nghiêm ngặt: Bạn có thể chọn nhiều loại dị ứng cùng lúc. Hệ thống AI tự động loại bỏ 100% thức uống chứa bất kỳ thành phần nào bạn đã đánh dấu.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -260,9 +265,9 @@ export const CheckInSurvey: React.FC<CheckInSurveyProps> = ({ onSubmit, isLoadin
                   type="button"
                   key={item.id}
                   onClick={() => toggleAllergy(item.id as AllergyType)}
-                  className={`p-3 rounded-xl text-left border transition-all flex items-start gap-2.5 ${
+                  className={`p-3.5 rounded-xl text-left border transition-all flex items-start gap-2.5 cursor-pointer active:scale-98 ${
                     isSelected
-                      ? 'bg-[#c45a4b] border-[#ad4d3f] text-white shadow-sm'
+                      ? 'bg-[#c45a4b] border-[#ad4d3f] text-white shadow-sm ring-2 ring-[#c45a4b]/30'
                       : 'bg-white border-[#e8cfc8] text-[#4a453e] hover:bg-[#fbf0ec]'
                   }`}
                 >

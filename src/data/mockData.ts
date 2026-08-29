@@ -1,4 +1,4 @@
-import { Drink, Store } from '../types';
+import { Drink, Store, PastOrder } from '../types';
 
 export const DRINKS_DATABASE: Drink[] = [
   {
@@ -605,10 +605,12 @@ export const PREFERENCE_OPTIONS = [
 ];
 
 export const ALLERGY_OPTIONS = [
-  { id: 'lactose', label: 'Dị ứng Lactose (Sữa bò)', warning: 'Tự động lọc bỏ sữa bò, bọt foam sữa' },
-  { id: 'caffeine', label: 'Không dùng Cafein (Say cà phê)', warning: 'Lọc bỏ cà phê, cold brew, matcha đậm' },
-  { id: 'peanuts', label: 'Dị ứng Đậu phộng / Các loại Hạt', warning: 'Lọc bỏ sữa hạt, topping hạnh nhân/óc chó' },
-  { id: 'vegan', label: 'Thuần Chay (Vegan 100%)', warning: 'Chỉ dùng nguyên liệu từ thực vật, mật hoa' }
+  { id: 'lactose', label: 'Dị ứng Lactose (Sữa bò)', warning: 'Tự động lọc bỏ sữa tươi, bọt foam sữa, phô mai' },
+  { id: 'caffeine', label: 'Không dùng Cafein (Say cà phê / ép tim)', warning: 'Lọc bỏ cà phê, cold brew, matcha đậm' },
+  { id: 'peanuts', label: 'Dị ứng Đậu phộng / Các loại Hạt', warning: 'Lọc bỏ sữa hạt, topping hạnh nhân, óc chó, đậu phộng' },
+  { id: 'dairy', label: 'Kiêng hoàn toàn Sữa & Chế phẩm sữa', warning: 'Lọc bỏ bơ, kem béo, phô mai mặn, sữa đặc' },
+  { id: 'gluten', label: 'Dị ứng Gluten (Lúa mạch, Yến mạch)', warning: 'Lọc bỏ các loại trà lúa mạch, topping ngũ cốc' },
+  { id: 'vegan', label: 'Thuần Chay (Vegan 100%)', warning: 'Chỉ dùng nguyên liệu từ thực vật hữu cơ, mật hoa' }
 ];
 
 export const GOAL_OPTIONS = [
@@ -619,3 +621,186 @@ export const GOAL_OPTIONS = [
   { id: 'digestion', label: 'Nhẹ bụng & Kích thích tiêu hóa', icon: 'Leaf' },
   { id: 'hydration', label: 'Bù nước & Điện giải mát lành', icon: 'ShieldCheck' }
 ];
+
+export const SAMPLE_PAST_ORDERS: PastOrder[] = [
+  {
+    id: 'ord-101',
+    orderCode: 'DS-9824',
+    createdAt: 'Hôm nay, 14:30',
+    status: 'delivered',
+    storeName: 'DailySip Flagship Nguyễn Du',
+    deliveryAddress: 'Tòa nhà Bitexco, Q.1, TP.HCM',
+    paymentMethod: 'Ví MoMo',
+    subtotal: 94000,
+    deliveryFee: 15000,
+    discount: 15000,
+    totalAmount: 94000,
+    items: [
+      {
+        id: 'item-1',
+        drinkId: 'cold-brew-orange-lemongrass',
+        drinkName: 'Cold Brew Cam Sả Vàng',
+        drinkImage: 'https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=700&auto=format&fit=crop&q=80',
+        storeId: 'store-1',
+        storeName: 'DailySip Flagship Nguyễn Du',
+        storeAddress: '12 Nguyễn Du, P. Bến Nghé, Quận 1',
+        unitPrice: 49000,
+        quantity: 1,
+        customization: {
+          size: 'M',
+          ice: '50% đá',
+          sweetness: '30%',
+          toppings: [{ name: 'Thạch sả mật ong', price: 8000 }],
+          specialNote: 'Giao nhanh giúp mình nhé'
+        },
+        totalPrice: 57000
+      },
+      {
+        id: 'item-2',
+        drinkId: 'chamomile-honey-red-apple',
+        drinkName: 'Trà Hoa Cúc Mật Ong Táo Đỏ',
+        drinkImage: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=700&auto=format&fit=crop&q=80',
+        storeId: 'store-1',
+        storeName: 'DailySip Flagship Nguyễn Du',
+        storeAddress: '12 Nguyễn Du, P. Bến Nghé, Quận 1',
+        unitPrice: 45000,
+        quantity: 1,
+        customization: {
+          size: 'M',
+          ice: 'Nóng',
+          sweetness: '50%',
+          toppings: [{ name: 'Nha đam tươi giòn', price: 7000 }],
+          specialNote: 'Uống ấm'
+        },
+        totalPrice: 52000
+      }
+    ]
+  },
+  {
+    id: 'ord-102',
+    orderCode: 'DS-8712',
+    createdAt: '28/08/2026, 09:15',
+    status: 'delivered',
+    storeName: 'The Sip Garden Pasteur',
+    deliveryAddress: 'Số 45 Lê Lợi, Bến Nghé, Q.1',
+    paymentMethod: 'Vietcombank Digital',
+    subtotal: 104000,
+    deliveryFee: 12000,
+    discount: 10000,
+    totalAmount: 106000,
+    review: {
+      rating: 5,
+      comment: 'Đồ uống rất tươi ngon, vị bơ béo nhẹ thanh mát, shipper giao siêu nhanh chỉ 15 phút!',
+      createdAt: '28/08/2026'
+    },
+    items: [
+      {
+        id: 'item-3',
+        drinkId: 'avocado-banana-plant-protein',
+        drinkName: 'Sinh Tố Bơ Chuối Đạm Thực Vật',
+        drinkImage: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?w=700&auto=format&fit=crop&q=80',
+        storeId: 'store-2',
+        storeName: 'The Sip Garden Pasteur',
+        storeAddress: '68 Pasteur, P. Bến Nghé, Quận 1',
+        unitPrice: 65000,
+        quantity: 1,
+        customization: {
+          size: 'L',
+          ice: '50% đá',
+          sweetness: '0%',
+          toppings: [{ name: 'Hạt chia hữu cơ', price: 6000 }],
+          specialNote: 'Ít ngọt'
+        },
+        totalPrice: 77000
+      },
+      {
+        id: 'item-4',
+        drinkId: 'fresh-coconut-calamansi-pink-salt',
+        drinkName: 'Nước Dừa Tươi Tắc Muối Hồng',
+        drinkImage: 'https://images.unsplash.com/photo-1546173159-315724a31696?w=700&auto=format&fit=crop&q=80',
+        storeId: 'store-2',
+        storeName: 'The Sip Garden Pasteur',
+        storeAddress: '68 Pasteur, P. Bến Nghé, Quận 1',
+        unitPrice: 39000,
+        quantity: 1,
+        customization: {
+          size: 'M',
+          ice: '100% đá',
+          sweetness: '30%',
+          toppings: [],
+          specialNote: ''
+        },
+        totalPrice: 39000
+      }
+    ]
+  },
+  {
+    id: 'ord-103',
+    orderCode: 'DS-6520',
+    createdAt: '26/08/2026, 16:45',
+    status: 'returned',
+    storeName: 'Herbal Zen Tea House',
+    deliveryAddress: 'Tòa nhà Bitexco, Q.1, TP.HCM',
+    paymentMethod: 'Ví MoMo',
+    subtotal: 42000,
+    deliveryFee: 15000,
+    discount: 0,
+    totalAmount: 57000,
+    items: [
+      {
+        id: 'item-5',
+        drinkId: 'ginger-lemongrass-citrus-warm',
+        drinkName: 'Trà Gừng Chanh Sả Mật Ong Nóng',
+        drinkImage: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=700&auto=format&fit=crop&q=80',
+        storeId: 'store-3',
+        storeName: 'Herbal Zen Tea House',
+        storeAddress: '150 Đồng Khởi, Bến Nghé, Quận 1',
+        unitPrice: 42000,
+        quantity: 1,
+        customization: {
+          size: 'M',
+          ice: 'Nóng',
+          sweetness: '30%',
+          toppings: [{ name: 'Lát gừng sên mật ong', price: 6000 }],
+          specialNote: 'Gừng cay ấm'
+        },
+        totalPrice: 48000
+      }
+    ]
+  },
+  {
+    id: 'ord-104',
+    orderCode: 'DS-4109',
+    createdAt: '24/08/2026, 11:20',
+    status: 'cancelled',
+    storeName: 'Pure Green Detox Lab',
+    deliveryAddress: 'Số 10 Hai Bà Trưng, Q.1',
+    paymentMethod: 'Tiền mặt (COD)',
+    subtotal: 55000,
+    deliveryFee: 10000,
+    discount: 5000,
+    totalAmount: 60000,
+    items: [
+      {
+        id: 'item-6',
+        drinkId: 'pineapple-mint-kombucha',
+        drinkName: 'Kombucha Dứa Bạc Hà Men Sống',
+        drinkImage: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=700&auto=format&fit=crop&q=80',
+        storeId: 'store-4',
+        storeName: 'Pure Green Detox Lab',
+        storeAddress: '88 Hàm Nghi, P. Bến Nghé, Quận 1',
+        unitPrice: 55000,
+        quantity: 1,
+        customization: {
+          size: 'M',
+          ice: '50% đá',
+          sweetness: '30%',
+          toppings: [],
+          specialNote: ''
+        },
+        totalPrice: 55000
+      }
+    ]
+  }
+];
+

@@ -16,10 +16,10 @@ import { CartDrawer } from './components/CartDrawer';
 import { DrinkCustomizationModal } from './components/DrinkCustomizationModal';
 import { HomeRecipeModal } from './components/HomeRecipeModal';
 import { NutritionistChatModal } from './components/NutritionistChatModal';
-import { SurpriseWheel } from './components/SurpriseWheel';
 import { OrderTrackingModal } from './components/OrderTrackingModal';
 import { LocationModal } from './components/LocationModal';
-import { DRINKS_DATABASE, STORES_DATABASE } from './data/mockData';
+import { UserProfileModal } from './components/UserProfileModal';
+import { DRINKS_DATABASE, STORES_DATABASE, SAMPLE_PAST_ORDERS } from './data/mockData';
 import {
   Drink,
   Store,
@@ -28,7 +28,10 @@ import {
   Order,
   HydrationLogItem,
   AIAdvice,
-  CheckInFormData
+  CheckInFormData,
+  UserProfile,
+  MembershipRank,
+  PastOrder
 } from './types';
 
 export default function App() {
@@ -40,8 +43,9 @@ export default function App() {
   const [aiAnalysis, setAiAnalysis] = useState<AIAdvice | undefined>({
     summary: 'Chào mừng bạn đến với DailySip! Hãy thực hiện Daily Check-in để nhận 5 gợi ý đồ uống thiết kế riêng cho bạn hôm nay.',
     wellnessTip: 'Uống đủ nước và ưu tiên thảo mộc tự nhiên giúp tinh thần sảng khoái và cơ thể dẻo dai.',
-    caffeineAdvice: 'Giữ mức nạp cafein dưới 300mg/ngày để tránh ép tim và duy trì giấc ngủ ngon.',
-    sugarAdvice: 'Ưu tiên độ ngọt 30% - 50% từ đường tự nhiên hoặc mật ong hoa rừng.'
+    timingAdvice: 'Nên uống sau bữa ăn 30-45 phút hoặc trước 16h chiều để cơ thể chuyển hóa năng lượng tốt nhất.',
+    sugarAdvice: 'Ưu tiên độ ngọt 30% - 50% từ đường tự nhiên hoặc mật ong hoa rừng.',
+    allergyNotice: 'Lá chắn Dị ứng đa tầng: Tự động phát hiện và loại bỏ 100% các thành phần dị ứng & kiêng cữ bạn đã chọn.'
   });
 
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
@@ -71,8 +75,78 @@ export default function App() {
   const [selectedDrinkForRecipe, setSelectedDrinkForRecipe] = useState<Drink | null>(null);
 
   const [isSommelierOpen, setIsSommelierOpen] = useState(false);
-  const [isSurpriseOpen, setIsSurpriseOpen] = useState(false);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  // User Profile with Membership Rank and Saved Avatar
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
+    const savedAvatar = typeof window !== 'undefined' ? localStorage.getItem('dailysip_user_avatar') : null;
+    return {
+      name: 'Nguyễn Thiên Luân',
+      phone: '0908 123 456',
+      email: 'thienluan@dailysip.vn',
+      avatar:
+        savedAvatar ||
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+      totalOrdersCount: 12,
+      rank: 'silver',
+      linkedPayments: [
+        {
+          id: 'pay-1',
+          type: 'momo',
+          name: 'Ví MoMo Cá Nhân',
+          accountNumber: '0908 123 456',
+          isDefault: true,
+          logo: 'https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png'
+        },
+        {
+          id: 'pay-2',
+          type: 'bank',
+          name: 'Vietcombank Digital',
+          accountNumber: '**** **** 8892',
+          isDefault: false,
+          logo: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=100&auto=format&fit=crop&q=80'
+        }
+      ]
+    };
+  });
+
+  const handleUpdateProfile = (updated: Partial<UserProfile>) => {
+    setUserProfile(prev => {
+      const next = { ...prev, ...updated };
+      if (updated.totalOrdersCount !== undefined) {
+        if (next.totalOrdersCount >= 51) next.rank = 'diamond';
+        else if (next.totalOrdersCount >= 21) next.rank = 'gold';
+        else if (next.totalOrdersCount >= 6) next.rank = 'silver';
+        else next.rank = 'bronze';
+      }
+      return next;
+    });
+  };
+
+  const [pastOrders, setPastOrders] = useState<PastOrder[]>(SAMPLE_PAST_ORDERS);
+
+  const handleReviewOrder = (orderId: string, rating: number, comment: string) => {
+    setPastOrders(prev =>
+      prev.map(ord =>
+        ord.id === orderId
+          ? {
+              ...ord,
+              review: {
+                rating,
+                comment,
+                createdAt: 'Hôm nay'
+              }
+            }
+          : ord
+      )
+    );
+  };
+
+  const handleReorder = (order: PastOrder) => {
+    setCartItems(prev => [...prev, ...order.items]);
+    setIsCartOpen(true);
+  };
 
   // Daily Hydration Logs
   const [hydrationLogs, setHydrationLogs] = useState<HydrationLogItem[]>([
@@ -196,6 +270,28 @@ export default function App() {
     setIsCartOpen(false);
     setIsTrackingOpen(true);
 
+    // Increment user orders count for rank progression
+    handleUpdateProfile({
+      totalOrdersCount: userProfile.totalOrdersCount + 1
+    });
+
+    // Add to past orders list
+    const newPastOrder: PastOrder = {
+      id: `ord-${Date.now()}`,
+      orderCode: `DS-${Math.floor(1000 + Math.random() * 9000)}`,
+      createdAt: 'Vừa xong',
+      status: 'delivered',
+      storeName: order.items[0]?.storeName || 'DailySip Store',
+      deliveryAddress: order.deliveryAddress,
+      paymentMethod: order.paymentMethod === 'momo' ? 'Ví MoMo' : order.paymentMethod === 'vnpay' ? 'VNPay' : 'Tiền mặt (COD)',
+      subtotal: order.subtotal,
+      deliveryFee: order.deliveryFee,
+      discount: order.discount,
+      totalAmount: order.totalAmount,
+      items: order.items
+    };
+    setPastOrders(prev => [newPastOrder, ...prev]);
+
     // Also automatically log to hydration tracker
     order.items.forEach(item => {
       const matchDrink = drinks.find(d => d.id === item.drinkId);
@@ -293,7 +389,8 @@ export default function App() {
             cartItems={cartItems}
             setIsCartOpen={setIsCartOpen}
             setIsSommelierOpen={setIsSommelierOpen}
-            setIsSurpriseOpen={setIsSurpriseOpen}
+            userProfile={userProfile}
+            setIsProfileOpen={setIsProfileOpen}
             dailyWaterMl={totalWaterMl}
             dailyCaffeineMg={totalCaffeineMg}
             userAddress={userAddress}
@@ -368,7 +465,8 @@ export default function App() {
             onChangeLocation={() => setIsLocationOpen(true)}
             cartItems={cartItems}
             setIsCartOpen={setIsCartOpen}
-            setIsSurpriseOpen={setIsSurpriseOpen}
+            userProfile={userProfile}
+            setIsProfileOpen={setIsProfileOpen}
             dailyWaterMl={totalWaterMl}
             dailyCaffeineMg={totalCaffeineMg}
             onLogoClick={() => setActiveTab('checkin')}
@@ -477,16 +575,6 @@ export default function App() {
         }}
       />
 
-      <SurpriseWheel
-        isOpen={isSurpriseOpen}
-        onClose={() => setIsSurpriseOpen(false)}
-        drinks={drinks}
-        onSelectDrink={drink => {
-          setIsSurpriseOpen(false);
-          handleOpenCustomization(drink);
-        }}
-      />
-
       <OrderTrackingModal
         isOpen={isTrackingOpen}
         order={activeOrder}
@@ -501,6 +589,16 @@ export default function App() {
         onClose={() => setIsLocationOpen(false)}
         currentAddress={userAddress}
         onSelectAddress={handleSelectLocation}
+      />
+
+      <UserProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        userProfile={userProfile}
+        onUpdateProfile={handleUpdateProfile}
+        pastOrders={pastOrders}
+        onReorder={handleReorder}
+        onReviewOrder={handleReviewOrder}
       />
     </MobileDeviceFrame>
   );

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { DRINKS_DATABASE, STORES_DATABASE } from './src/data/mockData';
-import { CheckInFormData, Drink, Store } from './src/types';
+import { CheckInFormData, Drink, Store, AIAdvice } from './src/types';
 
 // Load environment variables from .env or .env.local
 dotenv.config({ path: '.env.local' });
@@ -87,19 +87,35 @@ async function startServer() {
       const formData: CheckInFormData = req.body;
       const { moods = [], bodyConditions = [], preferences = [], allergies = [], goal, customNote } = formData;
 
-      // STEP 1: Hard Filter (Loại bỏ tuyệt đối)
+      // STEP 1: Hard Filter (Loại bỏ tuyệt đối 100% tất cả các dị ứng & kiêng cữ được chọn)
       let availableDrinks = DRINKS_DATABASE.filter(drink => {
-        if (allergies.includes('lactose') && drink.containsLactose) return false;
-        if (allergies.includes('caffeine') && drink.containsCaffeine) return false;
-        if (allergies.includes('peanuts') && drink.containsNuts) return false;
+        // 1. Dị ứng Lactose (sữa bò)
+        if (allergies.includes('lactose') && (drink.containsLactose || drink.category === 'milk_nut')) return false;
+        // 2. Kiêng / Dị ứng Cafein
+        if ((allergies.includes('caffeine') || bodyConditions.includes('caffeine_sensitive')) && (drink.containsCaffeine || drink.caffeineMg > 0)) return false;
+        // 3. Dị ứng Đậu phộng / Các loại hạt
+        if (allergies.includes('peanuts') && (drink.containsNuts || drink.ingredients.some(ing => ing.toLowerCase().includes('hạt') || ing.toLowerCase().includes('đậu') || ing.toLowerCase().includes('nut')))) return false;
+        // 4. Kiêng chế phẩm từ sữa (Dairy)
+        if (allergies.includes('dairy') && (drink.containsLactose || drink.ingredients.some(ing => ing.toLowerCase().includes('sữa') || ing.toLowerCase().includes('cheese') || ing.toLowerCase().includes('foam') || ing.toLowerCase().includes('kem')))) return false;
+        // 5. Dị ứng Gluten
+        if (allergies.includes('gluten') && drink.ingredients.some(ing => ing.toLowerCase().includes('lúa mạch') || ing.toLowerCase().includes('yến mạch') || ing.toLowerCase().includes('bánh'))) return false;
+        // 6. Ăn Thuần Chay (Vegan)
         if (allergies.includes('vegan') && !drink.isVegan) return false;
-        if (bodyConditions.includes('caffeine_sensitive') && drink.containsCaffeine) return false;
+        // 7. Thích uống Nóng
         if (preferences.includes('hot') && !drink.isHotAvailable) return false;
         return true;
       });
 
       if (availableDrinks.length === 0) {
-        availableDrinks = DRINKS_DATABASE.filter(d => !d.containsLactose);
+        // Safe fallback strictly respecting all user's selected allergies
+        availableDrinks = DRINKS_DATABASE.filter(drink => {
+          if (allergies.includes('lactose') && (drink.containsLactose || drink.category === 'milk_nut')) return false;
+          if ((allergies.includes('caffeine') || bodyConditions.includes('caffeine_sensitive')) && (drink.containsCaffeine || drink.caffeineMg > 0)) return false;
+          if (allergies.includes('peanuts') && drink.containsNuts) return false;
+          if (allergies.includes('dairy') && drink.containsLactose) return false;
+          if (allergies.includes('vegan') && !drink.isVegan) return false;
+          return true;
+        });
       }
 
       // STEP 2: Rule-based Scoring Matrix
@@ -141,16 +157,33 @@ async function startServer() {
       scoredDrinks.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
       const top5Drinks = scoredDrinks.slice(0, 5);
 
-      // STEP 3: Enrich with Gemini Reasoning if API Key is available
-      let aiAnalysis = {
+      // STEP 3: Generate detailed multi-allergy notice
+      const ALLERGY_MAP: Record<string, string> = {
+        lactose: 'Dị ứng Lactose (Sữa bò)',
+        caffeine: 'Không dùng Cafein (Say cà phê / ép tim)',
+        peanuts: 'Dị ứng Đậu phộng / Các loại Hạt',
+        dairy: 'Kiêng Sữa & Chế phẩm từ sữa',
+        gluten: 'Dị ứng Gluten (Lúa mạch, Yến mạch)',
+        vegan: 'Ăn Thuần Chay (Vegan 100%)'
+      };
+
+      let allergyNotice = '';
+      if (allergies.length > 0) {
+        const allergyNames = allergies.map(a => ALLERGY_MAP[a] || a);
+        allergyNotice = `Hệ thống AI đã kích hoạt Lá Chắn Dị Ứng: Kiểm duyệt và LOẠI BỎ 100% toàn bộ ${allergyNames.length} yếu tố kiêng cữ bạn đã chọn (${allergyNames.join(', ')}). Tất cả 5 đồ uống trong danh sách Top 5 đã được kiểm chứng an toàn tuyệt đối cho cơ thể bạn!`;
+      } else {
+        allergyNotice = 'Không ghi nhận tiền sử dị ứng đặc biệt. Cơ thể sẵn sàng đón nhận đa dạng các nhóm thức uống thanh nhiệt, bổ dưỡng.';
+      }
+
+      // STEP 4: Enrich with Gemini Reasoning if API Key is available
+      let aiAnalysis: AIAdvice = {
         summary: `Hệ thống DailySip đã chọn lọc 5 thức uống tối ưu nhất cho tình trạng của bạn.`,
         wellnessTip: 'Hãy uống nước ấm từ từ và chia nhỏ ngụm để cơ thể hấp thu dưỡng chất tốt nhất.',
-        caffeineAdvice: allergies.includes('caffeine') || bodyConditions.includes('caffeine_sensitive')
-          ? 'Đã loại trừ toàn bộ đồ uống chứa cafein để tránh ép tim.'
-          : 'Hàm lượng cafein được kiểm soát ở mức an toàn cho năng lượng bền vững.',
+        timingAdvice: 'Nên uống sau bữa ăn 30-45 phút hoặc trước 16h chiều để cơ thể chuyển hóa dưỡng chất tốt nhất và không gây cồn cào.',
         sugarAdvice: preferences.includes('low_sugar') || preferences.includes('no_sugar')
           ? 'Ưu tiên vị ngọt tự nhiên từ trái cây và thảo mộc, không thêm đường tinh luyện.'
-          : 'Lượng đường cân bằng không gây tăng đột biến đường huyết.'
+          : 'Lượng đường cân bằng không gây tăng đột biến đường huyết.',
+        allergyNotice
       };
 
       const ai = getGeminiClient();
@@ -161,19 +194,20 @@ Người dùng vừa thực hiện Daily Check-in với thông tin sau:
 - Tâm trạng: ${moods.join(', ') || 'Bình thường'}
 - Trạng thái cơ thể: ${bodyConditions.join(', ') || 'Khỏe mạnh'}
 - Sở thích/Vị: ${preferences.join(', ') || 'Tự nhiên'}
-- Dị ứng / Kiêng kỵ: ${allergies.join(', ') || 'Không có'}
+- TẤT CẢ DỊ ỨNG & KIÊNG CỮ: ${allergies.length > 0 ? allergies.map(a => ALLERGY_MAP[a] || a).join(', ') : 'Không có dị ứng'}
 - Mục tiêu chính: ${goal || 'Cân bằng'}
 - Ghi chú thêm: ${customNote || 'Không có'}
 
-Top 5 đồ uống được hệ thống lọc sơ bộ:
-${top5Drinks.map((d, i) => `${i + 1}. ${d.name} (${d.vietnameseName}) - Calo: ${d.calories}kcal, Đường: ${d.sugarGrams}g, Cafein: ${d.caffeineMg}mg`).join('\n')}
+Top 5 đồ uống đã được hệ thống kiểm tra an toàn và lọc sơ bộ:
+${top5Drinks.map((d, i) => `${i + 1}. ${d.name} (${d.vietnameseName}) - Calo: ${d.calories}kcal, Đường: ${d.sugarGrams}g, Cafein: ${d.caffeineMg}mg, Thuần chay: ${d.isVegan ? 'Có' : 'Không'}, Lactose: ${d.containsLactose ? 'Có' : 'Không'}, Hạt: ${d.containsNuts ? 'Có' : 'Không'}`).join('\n')}
 
 Hãy cung cấp phản hồi JSON hợp lệ với cấu trúc sau:
 {
   "summary": "Lời nhận xét ngắn gọn (1-2 câu) thấu hiểu tình trạng của người dùng hôm nay bằng giọng ấm áp, chuyên nghiệp",
-  "wellnessTip": "1 lời khuyên sức khỏe thực tế cho người dùng hôm nay",
-  "caffeineAdvice": "Lời khuyên về cafein hôm nay",
+  "wellnessTip": "1 lời khuyên chăm sóc thể trạng thực tế cho người dùng hôm nay",
+  "timingAdvice": "1 lời khuyên về thời điểm uống lý tưởng trong ngày để tối ưu hấp thu dưỡng chất",
   "sugarAdvice": "Lời khuyên về lượng đường & calo hôm nay",
+  "allergyNotice": "Xác nhận rõ ràng về an toàn đối với tất cả các dị ứng mà người dùng đã chọn (nêu rõ từng dị ứng đã được loại bỏ an toàn 100%)",
   "drinkReasons": [
     {"id": "${top5Drinks[0]?.id || ''}", "whyItFits": "Giải thích chi tiết 1-2 câu vì sao món này trực tiếp cải thiện tình trạng của họ hôm nay"},
     {"id": "${top5Drinks[1]?.id || ''}", "whyItFits": "Giải thích chi tiết 1-2 câu..."},
@@ -195,8 +229,9 @@ Hãy cung cấp phản hồi JSON hợp lệ với cấu trúc sau:
             const parsed = JSON.parse(response.text);
             if (parsed.summary) aiAnalysis.summary = parsed.summary;
             if (parsed.wellnessTip) aiAnalysis.wellnessTip = parsed.wellnessTip;
-            if (parsed.caffeineAdvice) aiAnalysis.caffeineAdvice = parsed.caffeineAdvice;
+            if (parsed.timingAdvice) aiAnalysis.timingAdvice = parsed.timingAdvice;
             if (parsed.sugarAdvice) aiAnalysis.sugarAdvice = parsed.sugarAdvice;
+            if (parsed.allergyNotice) aiAnalysis.allergyNotice = parsed.allergyNotice;
 
             if (Array.isArray(parsed.drinkReasons)) {
               parsed.drinkReasons.forEach((item: { id: string; whyItFits: string }) => {

@@ -320,9 +320,10 @@ export const StoreMapView: React.FC<StoreMapViewProps> = ({
                                 onAddToCart(store, drinkDetail);
                               }}
                               className="px-2.5 py-1.5 rounded-lg bg-[#5e7e66] hover:bg-[#4e6c55] text-white text-xs font-bold shadow-2xs flex items-center gap-1 active:scale-95 cursor-pointer"
+                              title="Tùy chỉnh và thêm vào giỏ hàng"
                             >
-                              <ShoppingBag className="w-3 h-3" />
-                              <span>Đặt</span>
+                              <ShoppingBag className="w-3.5 h-3.5" />
+                              <span>+ Thêm</span>
                             </button>
                           </div>
                         </div>
