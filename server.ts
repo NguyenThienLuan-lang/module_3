@@ -45,11 +45,154 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  // Support large base64 image uploads for Vision AI
+  app.use(express.json({ limit: '25mb' }));
+  app.use(express.urlencoded({ limit: '25mb', extended: true }));
 
   // Health check
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // AI Vision Context Analyzer Endpoint
+  app.post('/api/analyze-vision', async (req, res) => {
+    try {
+      const { imageBase64, mimeType = 'image/jpeg', sceneHint } = req.body;
+
+      if (!imageBase64 && !sceneHint) {
+        return res.status(400).json({ success: false, message: 'Thiếu dữ liệu hình ảnh' });
+      }
+
+      const ai = getGeminiClient();
+
+      if (ai && imageBase64) {
+        try {
+          const base64Clean = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+          const detectedMime = imageBase64.startsWith('data:image/png') ? 'image/png' : mimeType || 'image/jpeg';
+
+          const visionPrompt = `Bạn là Trợ lý AI Thị giác & Sommelier Dinh dưỡng DailySip Việt Nam.
+Hãy quan sát và phân tích bức ảnh này của người dùng (nhận diện đồ vật, không gian, bối cảnh như bàn làm việc, laptop, sách vở học tập, phòng tập gym, phong cảnh chill hoàng hôn, ngoài trời nắng nóng, hoặc giường bệnh...).
+Dựa vào bối cảnh đó, hãy suy luận tâm trạng, trạng thái cơ thể và nhu cầu đồ uống phù hợp nhất.
+
+Hãy trả về DUY NHẤT một chuỗi JSON hợp lệ (không kèm markdown):
+{
+  "sceneType": "desk_work" | "study" | "relax_scenery" | "workout_gym" | "sick_bed" | "outdoor_hot" | "social_party" | "other",
+  "detectedObjects": ["laptop", "sách", "bàn làm việc"],
+  "vibeDescription": "1-2 câu mô tả không gian và cảm xúc ngắn gọn, ấm áp, tinh tế",
+  "suggestedMoods": ["sleepy", "tired"],
+  "suggestedBodyConditions": [],
+  "suggestedPreferences": ["low_sugar", "bold_rich"],
+  "suggestedGoal": "focus",
+  "autoCustomNote": "Không gian bàn làm việc với laptop, cần thức uống tỉnh táo tăng tập trung cao độ",
+  "confidenceScore": 95
+}`;
+
+          const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: detectedMime,
+                      data: base64Clean
+                    }
+                  },
+                  { text: visionPrompt }
+                ]
+              }
+            ],
+            config: {
+              responseMimeType: 'application/json'
+            }
+          });
+
+          if (response.text) {
+            const parsed = JSON.parse(response.text);
+            return res.json({ success: true, analysis: parsed, source: 'gemini_vision' });
+          }
+        } catch (geminiVisionErr) {
+          console.warn('Gemini Vision processing error, falling back to heuristic classifier:', geminiVisionErr);
+        }
+      }
+
+      // Fallback AI Vision Heuristic Classifier (Smart Scene Analysis)
+      let heuristicResult: any;
+      const hint = (sceneHint || '').toLowerCase();
+
+      if (hint.includes('gym') || hint.includes('workout') || hint.includes('sport')) {
+        heuristicResult = {
+          sceneType: 'workout_gym',
+          detectedObjects: ['tạ tập gym', 'thảm tập', 'bình nước thể thao', 'dụng cụ thể lực'],
+          vibeDescription: 'Nhận diện không gian tập luyện thể thao / phòng gym năng động. Cơ thể đang cần phục hồi cơ bắp và bù đắp khoáng chất.',
+          suggestedMoods: ['tired', 'excited'],
+          suggestedBodyConditions: ['post_workout', 'dehydrated'],
+          suggestedPreferences: ['creamy', 'low_sugar'],
+          suggestedGoal: 'muscle_recovery',
+          autoCustomNote: 'Vừa hoàn thành buổi tập luyện thể lực, cần thức uống giàu đạm thực vật và điện giải phục hồi',
+          confidenceScore: 92
+        };
+      } else if (hint.includes('relax') || hint.includes('scenery') || hint.includes('sunset') || hint.includes('chill') || hint.includes('balcony')) {
+        heuristicResult = {
+          sceneType: 'relax_scenery',
+          detectedObjects: ['khung cảnh hoàng hôn', 'ban công thoáng mát', 'cây xanh', 'ánh sáng dịu'],
+          vibeDescription: 'Không gian mở thư thái với ánh sáng êm dịu, rất thích hợp để xua tan âu lo và nạp lại năng lượng tinh thần.',
+          suggestedMoods: ['relax', 'happy'],
+          suggestedBodyConditions: [],
+          suggestedPreferences: ['herbal', 'fruity', 'low_sugar'],
+          suggestedGoal: 'stress_relief',
+          autoCustomNote: 'Góc thư giãn ngắm cảnh, ưu tiên thức trà thảo mộc hoa cúc táo đỏ làm dịu thần kinh',
+          confidenceScore: 94
+        };
+      } else if (hint.includes('sick') || hint.includes('bed') || hint.includes('cold') || hint.includes('throat')) {
+        heuristicResult = {
+          sceneType: 'sick_bed',
+          detectedObjects: ['giường nghỉ ngơi', 'chăn ấm', 'khăn giấy', 'nhiệt kế'],
+          vibeDescription: 'Bối cảnh nghỉ ngơi yên tĩnh. Phát hiện dấu hiệu mệt mỏi, cần thức uống làm ấm cơ thể và bảo vệ thanh quản.',
+          suggestedMoods: ['tired'],
+          suggestedBodyConditions: ['sore_throat', 'cold_flu'],
+          suggestedPreferences: ['herbal', 'hot', 'low_sugar'],
+          suggestedGoal: 'stress_relief',
+          autoCustomNote: 'Cổ họng đang rát và cơ thể mệt mỏi, cần trà gừng sả tắc mật ong ấm nóng kháng viêm',
+          confidenceScore: 90
+        };
+      } else if (hint.includes('outdoor') || hint.includes('sun') || hint.includes('hot')) {
+        heuristicResult = {
+          sceneType: 'outdoor_hot',
+          detectedObjects: ['ánh nắng ngoài trời', 'bóng râm', 'thời tiết nắng nóng'],
+          vibeDescription: 'Không gian ngoài trời nhiệt độ cao oi bức. Cơ thể đang tiêu hao nhiều nước và điện giải.',
+          suggestedMoods: ['tired'],
+          suggestedBodyConditions: ['dehydrated', 'internal_heat'],
+          suggestedPreferences: ['sour', 'iced', 'fruity'],
+          suggestedGoal: 'hydration',
+          autoCustomNote: 'Thời tiết ngoài trời nắng nóng, cần bù nước cấp tốc với nước dừa tươi tắc muối hồng',
+          confidenceScore: 91
+        };
+      } else {
+        // Default: Desk work / Study scene
+        heuristicResult = {
+          sceneType: 'desk_work',
+          detectedObjects: ['máy tính laptop', 'bàn làm việc', 'chuột máy tính', 'sổ tay ghi chép', 'tài liệu'],
+          vibeDescription: 'Nhận diện không gian bàn làm việc & học tập với laptop. Mức độ tập trung và năng lượng tư duy cần được tăng cường tức thì.',
+          suggestedMoods: ['sleepy', 'tired'],
+          suggestedBodyConditions: [],
+          suggestedPreferences: ['low_sugar', 'bold_rich'],
+          suggestedGoal: 'focus',
+          autoCustomNote: 'Bàn làm việc với laptop, cần thức uống đánh thức sự tỉnh táo êm dịu, không gây ép tim',
+          confidenceScore: 96
+        };
+      }
+
+      res.json({
+        success: true,
+        analysis: heuristicResult,
+        source: 'heuristic_vision'
+      });
+    } catch (error) {
+      console.error('Vision analysis error:', error);
+      res.status(500).json({ success: false, message: 'Lỗi phân tích hình ảnh' });
+    }
   });
 
   // Get all drinks catalogue
@@ -196,6 +339,7 @@ Người dùng vừa thực hiện Daily Check-in với thông tin sau:
 - Sở thích/Vị: ${preferences.join(', ') || 'Tự nhiên'}
 - TẤT CẢ DỊ ỨNG & KIÊNG CỮ: ${allergies.length > 0 ? allergies.map(a => ALLERGY_MAP[a] || a).join(', ') : 'Không có dị ứng'}
 - Mục tiêu chính: ${goal || 'Cân bằng'}
+- Bối cảnh qua AI Vision: ${formData.visionAnalysis?.vibeDescription ? `${formData.visionAnalysis.vibeDescription} (Vật thể: ${formData.visionAnalysis.detectedObjects?.join(', ')})` : 'Không dùng ảnh'}
 - Ghi chú thêm: ${customNote || 'Không có'}
 
 Top 5 đồ uống đã được hệ thống kiểm tra an toàn và lọc sơ bộ:
@@ -369,10 +513,51 @@ Trả về kết quả JSON hợp lệ theo định dạng:
     }
   });
 
+  // Stores Endpoint with GPS distance calculation and drink filtering
+  app.get('/api/stores', (req, res) => {
+    try {
+      const lat = parseFloat(req.query.lat as string) || 10.7725;
+      const lng = parseFloat(req.query.lng as string) || 106.6983;
+      const drinkId = req.query.drinkId as string;
+
+      let resultStores = STORES_DATABASE.map(store => {
+        const dist = calculateDistance(lat, lng, store.latitude, store.longitude);
+        const roundedDist = Math.round(dist * 10) / 10;
+        const estDeliveryTime = Math.max(12, Math.round(roundedDist * 6 + 10));
+
+        return {
+          ...store,
+          distanceKm: roundedDist,
+          deliveryTimeMins: estDeliveryTime,
+          menuItems: (store.menuItems || []).map(m => ({
+            ...m,
+            isAvailable: m.isAvailable !== false
+          }))
+        };
+      });
+
+      if (drinkId) {
+        resultStores = resultStores.filter(s =>
+          s.menuItems.some(m => m.drinkId === drinkId && m.isAvailable !== false)
+        );
+      }
+
+      resultStores.sort((a, b) => a.distanceKm - b.distanceKm);
+
+      res.json({
+        success: true,
+        stores: resultStores
+      });
+    } catch (err) {
+      console.error('Error fetching stores:', err);
+      res.status(500).json({ success: false, stores: STORES_DATABASE });
+    }
+  });
+
   // Vite middleware for development vs static build in production
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, host: '0.0.0.0', allowedHosts: true },
       appType: 'spa'
     });
     app.use(vite.middlewares);

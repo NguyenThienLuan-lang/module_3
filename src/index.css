@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
   :root {
     --natural-bg: #fdfbf7;
@@ -17,10 +19,31 @@
     --natural-terracotta: #d98b72;
     --natural-terracotta-dark: #b86e55;
     --natural-sand: #eaddcf;
+    color-scheme: light;
+  }
+
+  :root.dark, html.dark, .dark {
+    --natural-bg: #141210;
+    --natural-surface: #1d1a16;
+    --natural-surface-subtle: #25211c;
+    --natural-card: #201c18;
+    --natural-border: #383129;
+    --natural-border-strong: #4a4136;
+    --natural-text: #d4cdc5;
+    --natural-heading: #fdfbf7;
+    --natural-muted: #9c9285;
+    --natural-sage: #7d9d85;
+    --natural-sage-dark: #5e7e66;
+    --natural-sage-light: #202b23;
+    --natural-terracotta: #d98b72;
+    --natural-terracotta-dark: #e09680;
+    --natural-sand: #362f27;
+    color-scheme: dark;
   }
 
   * {
     font-feature-settings: "liga" 1, "calt" 1;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   }
 
   body {
@@ -38,4 +61,110 @@
     letter-spacing: -0.015em;
     font-weight: 700;
   }
+}
+
+/* =========================================================
+   COMPREHENSIVE DARK MODE THEME SYSTEM (CLASS-BASED ONLY)
+   ========================================================= */
+
+.dark body {
+  background-color: #141210 !important;
+  color: #d4cdc5 !important;
+}
+
+/* Dark mode surfaces & backgrounds */
+.dark .bg-white {
+  background-color: #201c18 !important;
+  color: #fdfbf7;
+}
+
+.dark .bg-\[\#fdfbf7\],
+.dark .bg-\[\#fdfbf7\]\/95 {
+  background-color: #141210 !important;
+}
+
+.dark .bg-\[\#f7f3ed\],
+.dark .bg-\[\#f7f3ed\]\/70,
+.dark .bg-\[\#f7f3ed\]\/60 {
+  background-color: #1c1915 !important;
+}
+
+.dark .bg-\[\#f2ece2\],
+.dark .bg-\[\#f2ece4\],
+.dark .bg-\[\#f8f5ee\],
+.dark .bg-\[\#fcfaf7\],
+.dark .bg-\[\#f5efe6\],
+.dark .bg-\[\#ede6dc\],
+.dark .bg-\[\#ede5d8\] {
+  background-color: #26211c !important;
+}
+
+.dark .bg-\[\#eef4f0\],
+.dark .bg-\[\#eef4f0\]\/80 {
+  background-color: #1a281f !important;
+}
+
+.dark .bg-\[\#fdf5f0\] {
+  background-color: #2d201a !important;
+}
+
+/* Dark mode text colors */
+.dark .text-\[\#2c2722\],
+.dark .text-\[\#1e1b18\],
+.dark .text-\[\#2c3a31\],
+.dark .text-\[\#1f1d1a\] {
+  color: #fdfbf7 !important;
+}
+
+.dark .text-\[\#4a453e\],
+.dark .text-\[\#3e3933\],
+.dark .text-\[\#6b6257\] {
+  color: #d4cdc5 !important;
+}
+
+.dark .text-\[\#8c827a\],
+.dark .text-\[\#a8a095\],
+.dark .text-\[\#7a7268\] {
+  color: #9c9285 !important;
+}
+
+/* Dark mode borders */
+.dark .border-\[\#e5dfd5\],
+.dark .border-\[\#ded5c7\],
+.dark .border-\[\#ded5c7\]\/50,
+.dark .border-\[\#f0eae1\],
+.dark .border-\[\#e8cfc8\],
+.dark .border-\[\#d8cfc4\],
+.dark .border-\[\#7d9d85\]\/40,
+.dark .border-\[\#7d9d85\]\/30 {
+  border-color: #383129 !important;
+}
+
+/* Dark mode inputs and textareas */
+.dark input[type="text"],
+.dark input[type="search"],
+.dark input[type="number"],
+.dark textarea,
+.dark select {
+  background-color: #1a1714 !important;
+  color: #fdfbf7 !important;
+  border-color: #3e362d !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #7d756b !important;
+}
+
+/* Dark mode bottom navigation & header */
+.dark header,
+.dark nav {
+  background-color: rgba(20, 18, 16, 0.95) !important;
+  border-color: #332c25 !important;
+}
+
+/* Dark mode modals */
+.dark .shadow-2xl,
+.dark .shadow-xl {
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.8) !important;
 }

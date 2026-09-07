@@ -49,6 +49,18 @@ export type GoalType =
   | 'hydration'
   | 'immunity';
 
+export interface VisionAnalysisResult {
+  sceneType: 'desk_work' | 'study' | 'relax_scenery' | 'workout_gym' | 'sick_bed' | 'outdoor_hot' | 'social_party' | 'other';
+  detectedObjects: string[];
+  vibeDescription: string;
+  suggestedMoods: MoodType[];
+  suggestedBodyConditions: BodyStatusType[];
+  suggestedPreferences?: PreferenceType[];
+  suggestedGoal: GoalType;
+  autoCustomNote?: string;
+  confidenceScore?: number;
+}
+
 export interface CheckInFormData {
   moods: MoodType[];
   bodyConditions: BodyStatusType[];
@@ -57,6 +69,8 @@ export interface CheckInFormData {
   timeSlot: TimeSlot;
   goal: GoalType;
   customNote?: string;
+  uploadedImage?: string;
+  visionAnalysis?: VisionAnalysisResult;
   userLocation?: {
     latitude: number;
     longitude: number;
@@ -219,6 +233,8 @@ export interface LinkedPayment {
 }
 
 export interface UserProfile {
+  id?: string;
+  username?: string;
   name: string;
   phone: string;
   email: string;

@@ -1,21 +1,44 @@
 import React from 'react';
-import { Sparkles, MapPin, ShoppingBag, BookOpen, Plus, Heart, Flame, Clock, Coffee, Droplets, CheckCircle2, ChevronRight, ShieldCheck } from 'lucide-react';
-import { Drink, AIAdvice } from '../types';
+import {
+  Sparkles,
+  MapPin,
+  ShoppingBag,
+  Plus,
+  Heart,
+  Flame,
+  Clock,
+  Coffee,
+  Droplets,
+  CheckCircle2,
+  ChevronRight,
+  ShieldCheck,
+  Camera,
+  Store as StoreIcon
+} from 'lucide-react';
+import { Drink, AIAdvice, VisionAnalysisResult, Store } from '../types';
 
 interface RecommendationViewProps {
   drinks: Drink[];
+  stores: Store[];
   aiAnalysis?: AIAdvice;
-  onSelectDrinkForStores: (drink: Drink) => void;
-  onQuickOrder: (drink: Drink) => void;
-  onOpenRecipe: (drink: Drink) => void;
+  visionAnalysis?: VisionAnalysisResult;
+  uploadedImage?: string;
+  onSelectDrinkForStores?: (drink: Drink) => void;
+  onOpenStoreDetail: (store: Store) => void;
+  onQuickOrder: (drink: Drink, store?: Store) => void;
+  onOpenRecipe?: (drink: Drink) => void;
   onLogDrink: (drink: Drink) => void;
   onRetakeCheckIn: () => void;
 }
 
 export const RecommendationView: React.FC<RecommendationViewProps> = ({
   drinks,
+  stores,
   aiAnalysis,
+  visionAnalysis,
+  uploadedImage,
   onSelectDrinkForStores,
+  onOpenStoreDetail,
   onQuickOrder,
   onOpenRecipe,
   onLogDrink,
@@ -41,6 +64,26 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                 Khảo sát lại
               </button>
             </div>
+
+            {/* AI Vision Context Chip (if user checked in with photo) */}
+            {visionAnalysis && (
+              <div className="mb-3.5 inline-flex items-center gap-2.5 p-2 pr-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-xs">
+                {uploadedImage ? (
+                  <img
+                    src={uploadedImage}
+                    alt="Bối cảnh"
+                    className="w-7 h-7 rounded-xl object-cover border border-white/40 shadow-xs shrink-0"
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-xl bg-white/20 flex items-center justify-center text-sm shrink-0">
+                    <Camera className="w-3.5 h-3.5 text-[#eaddcf]" />
+                  </div>
+                )}
+                <span className="text-[#eaddcf] leading-snug">
+                  Đã nhận diện bối cảnh: <strong className="text-white">{visionAnalysis.vibeDescription}</strong>
+                </span>
+              </div>
+            )}
 
             <h2 className="text-xl sm:text-2xl font-bold leading-snug mb-2 text-[#fdfbf7]">
               {aiAnalysis.summary}
@@ -109,6 +152,9 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
       {/* Drink list */}
       <div className="space-y-6">
         {drinks.map((drink, index) => {
+          const nearestStore =
+            stores.find(s => s.menuItems.some(m => m.drinkId === drink.id && m.isAvailable)) || stores[0];
+
           return (
             <div
               key={drink.id}
@@ -185,8 +231,45 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                       </div>
                     </div>
 
+                    {/* Nearest Store Link & Voucher Badge */}
+                    {nearestStore && (
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={() => onOpenStoreDetail(nearestStore)}
+                          className="w-full p-2.5 sm:p-3 rounded-2xl bg-[#f7f3ed] hover:bg-[#ede6dc] border border-[#e5dfd5] transition-all group/store flex items-center justify-between text-left cursor-pointer active:scale-98 shadow-2xs"
+                          title="Bấm để xem Menu quán, Voucher giảm giá và Đánh giá chi tiết"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-white text-[#5e7e66] flex items-center justify-center border border-[#e5dfd5] shrink-0 shadow-2xs group-hover/store:bg-[#5e7e66] group-hover/store:text-white transition-colors">
+                              <StoreIcon className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-[#2c2722] group-hover/store:text-[#5e7e66] transition-colors truncate">
+                                {nearestStore.name}
+                              </div>
+                              <div className="text-[10px] text-[#8c827a] flex items-center gap-1.5 mt-0.5">
+                                <span>📍 {nearestStore.distanceKm || 0.8} km</span>
+                                <span>•</span>
+                                <span className="text-amber-600 font-semibold flex items-center gap-0.5">
+                                  ⭐ {nearestStore.rating}
+                                </span>
+                                <span>•</span>
+                                <span>~{nearestStore.deliveryTimeMins}p</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 text-[11px] font-bold text-[#5e7e66] bg-white px-2.5 py-1 rounded-xl border border-[#e5dfd5] shrink-0 group-hover/store:border-[#7d9d85] shadow-2xs">
+                            <span>Menu & Voucher</span>
+                            <ChevronRight className="w-3 h-3" />
+                          </div>
+                        </button>
+                      </div>
+                    )}
+
                     {/* Why it fits explanation */}
-                    <div className="mt-3.5 bg-[#eef4f0]/80 border border-[#7d9d85]/30 rounded-2xl p-3.5">
+                    <div className="mt-3 bg-[#eef4f0]/80 border border-[#7d9d85]/30 rounded-2xl p-3">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-[#2c3a31] mb-1">
                         <CheckCircle2 className="w-4 h-4 text-[#5e7e66] shrink-0" />
                         <span>Vì sao món này tốt cho bạn hôm nay:</span>
@@ -197,7 +280,7 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                     </div>
 
                     {/* Health benefits */}
-                    <div className="mt-3">
+                    <div className="mt-2.5">
                       <span className="text-[11px] font-semibold text-[#8c827a] uppercase tracking-wider block mb-1">
                         Lợi ích sinh học chính:
                       </span>
@@ -212,48 +295,27 @@ export const RecommendationView: React.FC<RecommendationViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Actions Bar */}
-                  <div className="mt-5 pt-4 border-t border-[#e5dfd5] flex flex-wrap items-center justify-between gap-2.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={() => onOpenRecipe(drink)}
-                        className="px-3 py-2 rounded-xl text-xs font-semibold text-[#4a453e] bg-[#f7f3ed] hover:bg-[#ede6dc] transition-colors flex items-center gap-1.5 cursor-pointer"
-                        title="Xem công thức tự pha tại nhà"
-                      >
-                        <BookOpen className="w-3.5 h-3.5 text-[#7d9d85]" />
-                        <span>Công thức DIY</span>
-                      </button>
+                  {/* Actions Bar: Balanced 2-Button Grid */}
+                  <div className="mt-4 pt-3.5 border-t border-[#e5dfd5] grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => onLogDrink(drink)}
+                      className="w-full py-2.5 px-3 rounded-xl text-xs font-bold text-[#4a453e] bg-[#f7f3ed] hover:bg-[#ede6dc] border border-[#e5dfd5] transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+                      title="Đã uống món này và ghi vào nhật ký theo dõi sức khỏe"
+                    >
+                      <Plus className="w-4 h-4 text-[#5e7e66]" />
+                      <span>Đã Uống Món Này</span>
+                    </button>
 
-                      <button
-                        onClick={() => onLogDrink(drink)}
-                        className="px-3 py-2 rounded-xl text-xs font-semibold text-[#4a453e] bg-[#f7f3ed] hover:bg-[#ede6dc] transition-colors flex items-center gap-1.5 cursor-pointer"
-                        title="Đã uống món này và ghi vào nhật ký"
-                      >
-                        <Plus className="w-3.5 h-3.5 text-[#5e7e66]" />
-                        <span>Đã uống món này</span>
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <button
-                        type="button"
-                        onClick={() => onSelectDrinkForStores(drink)}
-                        className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl text-xs font-bold text-[#5e7e66] bg-[#eef4f0] hover:bg-[#e2ede5] border border-[#7d9d85]/30 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        <MapPin className="w-3.5 h-3.5 text-[#5e7e66]" />
-                        <span>Xem Quán Gần</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onQuickOrder(drink)}
-                        className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7d9d85] to-[#5e7e66] hover:from-[#6c8c74] hover:to-[#4e6c55] transition-all shadow-md shadow-[#5e7e66]/20 flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
-                        title="Tùy chỉnh đường/đá/topping và thêm vào giỏ hàng"
-                      >
-                        <ShoppingBag className="w-4 h-4" />
-                        <span>+ Thêm Vào Giỏ Hàng</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onQuickOrder(drink, nearestStore)}
+                      className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#7d9d85] to-[#5e7e66] hover:from-[#6c8c74] hover:to-[#4e6c55] transition-all shadow-md shadow-[#5e7e66]/20 flex items-center justify-center gap-1.5 active:scale-98 cursor-pointer"
+                      title="Tùy chỉnh đường/đá/topping và thêm vào giỏ hàng"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      <span>+ Thêm Vào Giỏ Hàng</span>
+                    </button>
                   </div>
                 </div>
               </div>

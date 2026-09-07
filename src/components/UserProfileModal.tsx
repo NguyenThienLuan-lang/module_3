@@ -26,7 +26,15 @@ import {
   MessageSquare,
   AlertCircle,
   XCircle,
-  CornerDownLeft
+  CornerDownLeft,
+  Settings,
+  Moon,
+  Sun,
+  LogOut,
+  Headphones,
+  PhoneCall,
+  MessageCircle,
+  Users
 } from 'lucide-react';
 import { UserProfile, MembershipRank, UserVoucher, LinkedPayment, PastOrder, OrderHistoryStatus } from '../types';
 
@@ -38,6 +46,10 @@ interface UserProfileModalProps {
   pastOrders: PastOrder[];
   onReorder: (order: PastOrder) => void;
   onReviewOrder: (orderId: string, rating: number, comment: string) => void;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
+  onLogout: () => void;
+  onOpenSwitchAccount: () => void;
 }
 
 export const ALL_RANK_VOUCHERS: UserVoucher[] = [
@@ -195,14 +207,24 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onUpdateProfile,
   pastOrders,
   onReorder,
-  onReviewOrder
+  onReviewOrder,
+  isDarkMode,
+  onToggleDarkMode,
+  onLogout,
+  onOpenSwitchAccount
 }) => {
-  const [activeTab, setActiveTab] = useState<'vouchers' | 'payments' | 'history'>('vouchers');
+  const [activeTab, setActiveTab] = useState<'vouchers' | 'payments' | 'history' | 'settings'>('vouchers');
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [nameInput, setNameInput] = useState(userProfile.name);
   const [phoneInput, setPhoneInput] = useState(userProfile.phone);
   const [showAddPayment, setShowAddPayment] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleLogout = () => {
+    setShowLogoutConfirm(false);
+    onLogout();
+  };
 
   // New payment form
   const [newPayType, setNewPayType] = useState<'momo' | 'bank'>('momo');
@@ -535,44 +557,57 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         </div>
 
         {/* 2. Modal Navigation Tabs */}
-        <div className="grid grid-cols-3 border-b border-[#e5dfd5] bg-[#f7f3ed] text-xs font-bold text-[#4a453e] shrink-0">
+        <div className="grid grid-cols-4 border-b border-[#e5dfd5] bg-[#f7f3ed] text-[11px] sm:text-xs font-bold text-[#4a453e] shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('vouchers')}
-            className={`py-3 flex items-center justify-center gap-1.5 transition-colors border-b-2 cursor-pointer ${
+            className={`py-3 px-1 flex items-center justify-center gap-1 transition-colors border-b-2 cursor-pointer ${
               activeTab === 'vouchers'
                 ? 'border-[#5e7e66] text-[#2c3a31] bg-white font-extrabold shadow-2xs'
                 : 'border-transparent text-[#8c827a] hover:text-[#2c3a31]'
             }`}
           >
-            <Gift className="w-4 h-4 text-[#d98b72]" />
-            <span>Voucher Hạng</span>
+            <Gift className="w-3.5 h-3.5 text-[#d98b72]" />
+            <span>Voucher</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('payments')}
-            className={`py-3 flex items-center justify-center gap-1.5 transition-colors border-b-2 cursor-pointer ${
+            className={`py-3 px-1 flex items-center justify-center gap-1 transition-colors border-b-2 cursor-pointer ${
               activeTab === 'payments'
                 ? 'border-[#5e7e66] text-[#2c3a31] bg-white font-extrabold shadow-2xs'
                 : 'border-transparent text-[#8c827a] hover:text-[#2c3a31]'
             }`}
           >
-            <CreditCard className="w-4 h-4 text-[#5e7e66]" />
-            <span>Ngân Hàng / MoMo</span>
+            <CreditCard className="w-3.5 h-3.5 text-[#5e7e66]" />
+            <span>Ví / Thẻ</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('history')}
-            className={`py-3 flex items-center justify-center gap-1.5 transition-colors border-b-2 cursor-pointer ${
+            className={`py-3 px-1 flex items-center justify-center gap-1 transition-colors border-b-2 cursor-pointer ${
               activeTab === 'history'
                 ? 'border-[#5e7e66] text-[#2c3a31] bg-white font-extrabold shadow-2xs'
                 : 'border-transparent text-[#8c827a] hover:text-[#2c3a31]'
             }`}
           >
-            <History className="w-4 h-4 text-[#7d9d85]" />
-            <span>Lịch Sử Đơn ({pastOrders.length})</span>
+            <History className="w-3.5 h-3.5 text-[#7d9d85]" />
+            <span>Lịch Sử</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('settings')}
+            className={`py-3 px-1 flex items-center justify-center gap-1 transition-colors border-b-2 cursor-pointer ${
+              activeTab === 'settings'
+                ? 'border-[#5e7e66] text-[#2c3a31] bg-white font-extrabold shadow-2xs'
+                : 'border-transparent text-[#8c827a] hover:text-[#2c3a31]'
+            }`}
+          >
+            <Settings className="w-3.5 h-3.5 text-[#4a453e]" />
+            <span>Cài Đặt</span>
           </button>
         </div>
 
@@ -1023,6 +1058,118 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               )}
             </div>
           )}
+
+          {/* TAB 4: SETTINGS, DARK MODE, CUSTOMER SUPPORT & LOGOUT */}
+          {activeTab === 'settings' && (
+            <div className="space-y-4 animate-in fade-in">
+              {/* Section 1: Settings Placeholder */}
+              <div className="p-3.5 rounded-2xl bg-[#f7f3ed] border border-[#e5dfd5] space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-white text-[#4a453e] flex items-center justify-center border border-[#e5dfd5]">
+                      <Settings className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="font-bold text-xs text-[#2c2722]">Cài Đặt Hệ Thống</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#eef4f0] text-[#5e7e66] font-bold">
+                    Sắp ra mắt
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#8c827a] leading-relaxed">
+                  Phần cấu hình nâng cao (Đồng bộ Apple Health / Google Fit, Nhắc nhở uống nước theo khung giờ, Ngôn ngữ giao diện) sẽ được tích hợp tại đây.
+                </p>
+              </div>
+
+              {/* Section 2: Dark Mode Toggle */}
+              <div className="p-3.5 rounded-2xl bg-white border border-[#e5dfd5] shadow-2xs flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center border ${
+                      isDarkMode
+                        ? 'bg-indigo-950 text-indigo-300 border-indigo-800'
+                        : 'bg-amber-50 text-amber-600 border-amber-200'
+                    }`}
+                  >
+                    {isDarkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <div className="font-bold text-xs text-[#2c2722]">
+                      Chế Độ Nền Tối (Dark Mode)
+                    </div>
+                    <div className="text-[10px] text-[#8c827a]">
+                      {isDarkMode ? 'Đang bật nền tối êm dịu mắt' : 'Đang bật giao diện sáng tự nhiên'}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onToggleDarkMode}
+                  className={`w-12 h-6.5 rounded-full p-0.5 transition-colors cursor-pointer flex items-center ${
+                    isDarkMode ? 'bg-[#5e7e66] justify-end' : 'bg-[#ded5c7] justify-start'
+                  }`}
+                  title="Bật/tắt chế độ tối"
+                >
+                  <div className="w-5.5 h-5.5 rounded-full bg-white shadow-md transform transition-transform" />
+                </button>
+              </div>
+
+              {/* Section 3: Customer Care & Support */}
+              <div className="p-3.5 rounded-2xl bg-white border border-[#e5dfd5] shadow-2xs space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-[#eef4f0] text-[#5e7e66] flex items-center justify-center border border-[#7d9d85]/30">
+                    <Headphones className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-xs text-[#2c2722] block">Tổng Đài & Gọi Hỗ Trợ 24/7</span>
+                    <span className="text-[10px] text-[#8c827a]">Hỗ trợ đơn hàng, khiếu nại chất lượng món</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <a
+                    href="tel:19008899"
+                    className="p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <PhoneCall className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Gọi 1900 8899</span>
+                  </a>
+
+                  <a
+                    href="mailto:support@dailysip.vn"
+                    className="p-2.5 rounded-xl bg-[#f7f3ed] hover:bg-[#ede6dc] border border-[#e5dfd5] text-[#4a453e] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 text-[#5e7e66]" />
+                    <span>Email CSKH</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Section 4: Switch Account & Logout Buttons */}
+              <div className="pt-1 space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenSwitchAccount();
+                  }}
+                  className="w-full py-3 px-4 rounded-2xl bg-[#eef4f0] hover:bg-[#dfeee3] text-[#2c3a31] border border-[#7d9d85]/40 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98 shadow-2xs"
+                >
+                  <Users className="w-4 h-4 text-[#5e7e66]" />
+                  <span>Chuyển Đổi Tài Khoản Khác</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98 shadow-2xs"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Đăng Xuất Tài Khoản</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 4. Footer */}
@@ -1035,6 +1182,39 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             Đóng hồ sơ
           </button>
         </div>
+
+        {/* 5. Logout Confirmation Sub-Modal */}
+        {showLogoutConfirm && (
+          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+            <div className="bg-white rounded-3xl max-w-xs w-full p-5 shadow-2xl border border-[#e5dfd5] space-y-3.5 text-center animate-in zoom-in-95">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-200">
+                <LogOut className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-[#2c2722]">Xác Nhận Đăng Xuất?</h4>
+                <p className="text-xs text-[#8c827a] mt-1 leading-relaxed">
+                  Bạn có chắc chắn muốn đăng xuất khỏi tài khoản <strong>{userProfile.name}</strong> không?
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#f0eae1]">
+                <button
+                  type="button"
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="py-2.5 rounded-xl border border-[#ded5c7] bg-white text-xs font-bold text-[#4a453e] hover:bg-stone-50 cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/25 transition-all cursor-pointer active:scale-95"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 5. Review Sub-Modal (Popup nhỏ khi bấm Đánh Giá) */}
         {reviewingOrder && (

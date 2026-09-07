@@ -6,6 +6,7 @@ interface StoreMapViewProps {
   stores: Store[];
   selectedDrink?: Drink | null;
   onClearDrinkFilter: () => void;
+  onOpenStoreDetail: (store: Store) => void;
   onAddToCart: (store: Store, drink: Drink) => void;
   userAddress: string;
   allDrinks: Drink[];
@@ -15,6 +16,7 @@ export const StoreMapView: React.FC<StoreMapViewProps> = ({
   stores,
   selectedDrink,
   onClearDrinkFilter,
+  onOpenStoreDetail,
   onAddToCart,
   userAddress,
   allDrinks
@@ -187,9 +189,19 @@ export const StoreMapView: React.FC<StoreMapViewProps> = ({
               <span className="font-bold text-white block truncate">{selectedStore.name}</span>
               <span className="text-[#a8a095] text-[10px] block truncate">{selectedStore.address}</span>
             </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-[#7d9d85]/30 text-[#eef4f0] text-[11px] font-bold shrink-0 border border-[#7d9d85]/40">
-              {selectedStore.distanceKm} km • ~{selectedStore.deliveryTimeMins}p
-            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="px-2 py-0.5 rounded-full bg-[#7d9d85]/30 text-[#eef4f0] text-[11px] font-bold border border-[#7d9d85]/40">
+                {selectedStore.distanceKm} km
+              </span>
+              <button
+                type="button"
+                onClick={() => onOpenStoreDetail(selectedStore)}
+                className="px-2.5 py-1 rounded-lg bg-[#7d9d85] hover:bg-[#5e7e66] text-white font-bold text-[11px] shadow-xs transition-colors flex items-center gap-1 cursor-pointer active:scale-95"
+              >
+                <span>Menu & Voucher</span>
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -223,7 +235,10 @@ export const StoreMapView: React.FC<StoreMapViewProps> = ({
             return (
               <div
                 key={store.id}
-                onClick={() => setSelectedStore(store)}
+                onClick={() => {
+                  setSelectedStore(store);
+                  onOpenStoreDetail(store);
+                }}
                 className={`bg-white rounded-2xl p-4 sm:p-5 border transition-all cursor-pointer ${
                   isSelected
                     ? 'border-[#5e7e66] ring-2 ring-[#7d9d85]/20 shadow-sm'
@@ -231,56 +246,83 @@ export const StoreMapView: React.FC<StoreMapViewProps> = ({
                 }`}
               >
                 {/* Store Header */}
-                <div className="flex items-start gap-3.5">
-                  <div className="w-13 h-13 rounded-xl overflow-hidden bg-[#f7f3ed] shrink-0 border border-[#e5dfd5]">
-                    <img
-                      src={store.image}
-                      alt={store.name}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-bold text-[#2c2722] text-sm sm:text-base leading-tight truncate">
-                        {store.name}
-                      </h4>
-                      {store.promoBadge && (
-                        <span className="text-[10px] bg-[#fdf5f0] text-[#b86e55] font-bold px-2 py-0.2 rounded-md border border-[#d98b72]/30">
-                          {store.promoBadge}
-                        </span>
-                      )}
+                <div className="flex items-start justify-between gap-3.5">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <div className="w-13 h-13 rounded-xl overflow-hidden bg-[#f7f3ed] shrink-0 border border-[#e5dfd5]">
+                      <img
+                        src={store.image}
+                        alt={store.name}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
                     </div>
-                    <p className="text-xs text-[#8c827a] mt-0.5 flex items-center gap-1 truncate">
-                      <MapPin className="w-3 h-3 text-[#5e7e66] shrink-0" />
-                      <span className="truncate">{store.address}</span>
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-bold text-[#2c2722] text-sm sm:text-base leading-tight truncate">
+                          {store.name}
+                        </h4>
+                        {store.promoBadge && (
+                          <span className="text-[10px] bg-[#fdf5f0] text-[#b86e55] font-bold px-2 py-0.2 rounded-md border border-[#d98b72]/30">
+                            {store.promoBadge}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#8c827a] mt-0.5 flex items-center gap-1 truncate">
+                        <MapPin className="w-3 h-3 text-[#5e7e66] shrink-0" />
+                        <span className="truncate">{store.address}</span>
+                      </p>
 
-                    {/* Store Meta Badges */}
-                    <div className="flex items-center gap-2.5 text-xs text-[#4a453e] mt-2 flex-wrap">
-                      <span className="flex items-center gap-1 text-[#b86e55] font-bold text-xs">
-                        <Star className="w-3.5 h-3.5 fill-[#d98b72] text-[#d98b72]" />
-                        {store.rating} ({store.reviewCount})
-                      </span>
-                      <span className="text-[#d8cfc4]">•</span>
-                      <span className="text-[#5e7e66] font-bold text-xs flex items-center gap-1">
-                        <Navigation className="w-3 h-3" />
-                        Cách bạn {store.distanceKm} km
-                      </span>
-                      <span className="text-[#d8cfc4]">•</span>
-                      <span className="text-[#8c827a] text-xs flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        Giao ~{store.deliveryTimeMins} phút
-                      </span>
+                      {/* Store Meta Badges */}
+                      <div className="flex items-center gap-2.5 text-xs text-[#4a453e] mt-2 flex-wrap">
+                        <span className="flex items-center gap-1 text-[#b86e55] font-bold text-xs">
+                          <Star className="w-3.5 h-3.5 fill-[#d98b72] text-[#d98b72]" />
+                          {store.rating} ({store.reviewCount})
+                        </span>
+                        <span className="text-[#d8cfc4]">•</span>
+                        <span className="text-[#5e7e66] font-bold text-xs flex items-center gap-1">
+                          <Navigation className="w-3 h-3" />
+                          Cách bạn {store.distanceKm} km
+                        </span>
+                        <span className="text-[#d8cfc4]">•</span>
+                        <span className="text-[#8c827a] text-xs flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          Giao ~{store.deliveryTimeMins} phút
+                        </span>
+                      </div>
                     </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      onOpenStoreDetail(store);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl bg-[#eef4f0] hover:bg-[#5e7e66] text-[#5e7e66] hover:text-white border border-[#7d9d85]/30 text-[11px] font-bold transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
+                  >
+                    <span>Menu & Voucher</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
                 {/* Menu Items at this store (Danh sách đồ uống) */}
                 <div className="mt-3.5 pt-3 border-t border-[#e5dfd5]/80">
-                  <span className="text-[11px] font-bold text-[#4a453e] uppercase tracking-wider block mb-2">
-                    🍹 Đồ uống phục vụ tại quán ({store.menuItems.length}):
-                  </span>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-[#4a453e] uppercase tracking-wider block">
+                      🍹 Đồ uống phục vụ tại quán ({store.menuItems.length}):
+                    </span>
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        onOpenStoreDetail(store);
+                      }}
+                      className="text-[11px] font-semibold text-[#5e7e66] hover:underline cursor-pointer"
+                    >
+                      Xem toàn bộ menu ➔
+                    </button>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {store.menuItems.map(item => {
                       const drinkDetail = allDrinks.find(d => d.id === item.drinkId);
@@ -332,9 +374,20 @@ export const StoreMapView: React.FC<StoreMapViewProps> = ({
                   </div>
                 </div>
 
-                {/* External Deeplink Options (GrabFood / ShopeeFood / Maps) */}
-                <div className="mt-3.5 pt-2.5 border-t border-[#e5dfd5]/60 flex items-center justify-between gap-1.5 flex-wrap text-xs">
-                  <span className="text-[11px] text-[#8c827a] font-medium">Hoặc đặt qua:</span>
+                {/* External Deeplink Options & Store Details */}
+                <div className="mt-3.5 pt-2.5 border-t border-[#e5dfd5]/60 flex items-center justify-between gap-2 flex-wrap text-xs">
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      onOpenStoreDetail(store);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#5e7e66] hover:bg-[#4e6c55] text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+                  >
+                    <span>📋 Xem Menu & Voucher Quán</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+
                   <div className="flex items-center gap-1.5">
                     {store.externalLinks.grabFoodUrl && (
                       <a

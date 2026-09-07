@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, ShoppingBag, MapPin, CreditCard, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
+import {
+  X,
+  Trash2,
+  Plus,
+  Minus,
+  ShoppingBag,
+  MapPin,
+  CreditCard,
+  ShieldCheck,
+  ArrowRight,
+  Sparkles,
+  Store as StoreIcon,
+  Bike,
+  Info
+} from 'lucide-react';
 import { CartItem, Order, OrderStatus } from '../types';
 
 interface CartDrawerProps {
@@ -41,10 +55,20 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   if (!isOpen) return null;
 
+  // Group items by store
+  const uniqueStores = Array.from(
+    new Set(cartItems.map(i => i.storeName || 'DailySip Flagship Nguyễn Du'))
+  );
+  const isMultiStore = uniqueStores.length > 1;
+
+  // Multi-stop fee: base 15.000đ + 10.000đ per extra store
+  const baseDeliveryFee = cartItems.length > 0 ? 15000 : 0;
+  const multiStoreExtraFee = isMultiStore ? (uniqueStores.length - 1) * 10000 : 0;
+  const totalDeliveryFee = baseDeliveryFee + multiStoreExtraFee;
+
   const subtotal = cartItems.reduce((sum, item) => sum + item.totalPrice * item.quantity, 0);
-  const deliveryFee = cartItems.length > 0 ? 15000 : 0;
   const discount = isPromoApplied && subtotal > 0 ? 20000 : 0;
-  const finalAmount = Math.max(0, subtotal + deliveryFee - discount);
+  const finalAmount = Math.max(0, subtotal + totalDeliveryFee - discount);
 
   const handleCheckout = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +78,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       id: 'DS-' + Math.floor(100000 + Math.random() * 900000),
       items: [...cartItems],
       subtotal,
-      deliveryFee,
+      deliveryFee: totalDeliveryFee,
       discount,
       totalAmount: finalAmount,
       customerName,
@@ -64,7 +88,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       paymentMethod,
       status: 'placed',
       placedAt: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-      estimatedDeliveryAt: new Date(Date.now() + 20 * 60000).toLocaleTimeString('vi-VN', {
+      estimatedDeliveryAt: new Date(
+        Date.now() + (isMultiStore ? 30 : 20) * 60000
+      ).toLocaleTimeString('vi-VN', {
         hour: '2-digit',
         minute: '2-digit'
       }),
@@ -98,7 +124,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <div>
                 <h3 className="font-bold text-[#2c2722] text-base">Giỏ Hàng Của Bạn</h3>
                 <span className="text-xs text-[#5e7e66] font-semibold">
-                  {cartItems.length} món • Đặt cho nhóm bạn bè
+                  {cartItems.length} món • {uniqueStores.length} quán
                 </span>
               </div>
             </div>
@@ -111,7 +137,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           </div>
 
           {/* Body items */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
             {cartItems.length === 0 ? (
               <div className="text-center py-16 text-[#a8a095] space-y-3">
                 <ShoppingBag className="w-12 h-12 mx-auto text-[#cfc8bf] stroke-1" />
@@ -120,8 +146,23 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
             ) : (
               <>
+                {/* Multi-Store Smart Notification Banner */}
+                {isMultiStore && (
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-xs text-amber-950 space-y-1 animate-in fade-in">
+                    <div className="flex items-center gap-2 font-bold text-amber-900">
+                      <span className="w-5 h-5 rounded-full bg-amber-200 text-amber-900 flex items-center justify-center text-[11px] font-extrabold shrink-0">
+                        {uniqueStores.length}
+                      </span>
+                      <span>🛵 Đơn Hàng Ghép {uniqueStores.length} Quán (Multi-Stop)</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      Shipper DailySip sẽ ghé lấy lần lượt tại <strong>{uniqueStores.join(' & ')}</strong> để gom đủ món cho bạn bè. (Phụ phí ghé thêm quán: +{multiStoreExtraFee.toLocaleString('vi-VN')}đ, dự kiến +10 phút).
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between text-xs text-[#8c827a] pb-1">
-                  <span>Chi tiết món</span>
+                  <span>Danh sách món theo từng quán:</span>
                   <button
                     onClick={onClearCart}
                     className="text-[#b86e55] hover:underline flex items-center gap-1 font-medium cursor-pointer"
@@ -131,77 +172,106 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   </button>
                 </div>
 
-                {cartItems.map(item => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 rounded-2xl bg-[#f7f3ed]/70 border border-[#e5dfd5] flex gap-3 relative"
-                  >
-                    <img
-                      src={item.drinkImage}
-                      alt={item.drinkName}
-                      className="w-16 h-16 rounded-xl object-cover shrink-0"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-1">
-                        <h4 className="font-bold text-xs text-[#2c2722] truncate">
-                          {item.drinkName}
-                        </h4>
-                        <button
-                          onClick={() => onRemoveItem(item.id)}
-                          className="text-[#a8a095] hover:text-[#b86e55] p-0.5 cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                {/* Grouped items by Store */}
+                <div className="space-y-4">
+                  {uniqueStores.map(storeName => {
+                    const storeItems = cartItems.filter(
+                      i => (i.storeName || 'DailySip Flagship Nguyễn Du') === storeName
+                    );
 
-                      <p className="text-[11px] text-[#5e7e66] font-medium truncate">
-                        Quán: {item.storeName}
-                      </p>
-
-                      <div className="text-[10px] text-[#4a453e] mt-1 flex flex-wrap gap-1">
-                        <span className="bg-[#ede6dc] px-1.5 py-0.5 rounded">
-                          Đường: {item.customization.sweetness}
-                        </span>
-                        <span className="bg-[#ede6dc] px-1.5 py-0.5 rounded">
-                          Đá: {item.customization.ice}
-                        </span>
-                        {item.customization.toppings.map(t => (
-                          <span key={t.name} className="bg-[#fdf5f0] text-[#b86e55] px-1.5 py-0.5 rounded font-semibold border border-[#d98b72]/30">
-                            +{t.name}
+                    return (
+                      <div
+                        key={storeName}
+                        className="border border-[#e5dfd5] rounded-2xl p-3.5 bg-white shadow-2xs space-y-3"
+                      >
+                        <div className="flex items-center justify-between border-b border-[#f0eae1] pb-2 text-xs">
+                          <span className="font-bold text-[#2c2722] flex items-center gap-1.5 truncate">
+                            <StoreIcon className="w-3.5 h-3.5 text-[#5e7e66] shrink-0" />
+                            <span className="truncate">{storeName}</span>
                           </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#eef4f0] text-[#5e7e66] shrink-0">
+                            {storeItems.length} món
+                          </span>
+                        </div>
+
+                        {storeItems.map(item => (
+                          <div
+                            key={item.id}
+                            className="p-3 rounded-xl bg-[#f7f3ed]/60 border border-[#e5dfd5] flex gap-3 relative"
+                          >
+                            <img
+                              src={item.drinkImage}
+                              alt={item.drinkName}
+                              className="w-14 h-14 rounded-xl object-cover shrink-0 border border-[#e5dfd5]"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-1">
+                                <h4 className="font-bold text-xs text-[#2c2722] truncate">
+                                  {item.drinkName}
+                                </h4>
+                                <button
+                                  onClick={() => onRemoveItem(item.id)}
+                                  className="text-[#a8a095] hover:text-[#b86e55] p-0.5 cursor-pointer"
+                                  title="Xóa món này"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+
+                              <div className="text-[10px] text-[#4a453e] mt-1 flex flex-wrap gap-1">
+                                <span className="bg-[#ede6dc] px-1.5 py-0.5 rounded text-[10px]">
+                                  Size {item.customization.size}
+                                </span>
+                                <span className="bg-[#ede6dc] px-1.5 py-0.5 rounded text-[10px]">
+                                  Đường: {item.customization.sweetness}
+                                </span>
+                                <span className="bg-[#ede6dc] px-1.5 py-0.5 rounded text-[10px]">
+                                  Đá: {item.customization.ice}
+                                </span>
+                                {item.customization.toppings.map(t => (
+                                  <span
+                                    key={t.name}
+                                    className="bg-[#fdf5f0] text-[#b86e55] px-1.5 py-0.5 rounded font-semibold border border-[#d98b72]/30 text-[10px]"
+                                  >
+                                    +{t.name}
+                                  </span>
+                                ))}
+                              </div>
+
+                              <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-[#e5dfd5]">
+                                <span className="text-xs font-extrabold text-[#2c2722]">
+                                  {(item.totalPrice * item.quantity).toLocaleString('vi-VN')} đ
+                                </span>
+
+                                <div className="flex items-center gap-1.5 bg-white rounded-lg border border-[#e5dfd5] px-1.5 py-0.5">
+                                  <button
+                                    onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
+                                    className="text-[#8c827a] hover:text-[#2c2722] p-0.5 cursor-pointer"
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </button>
+                                  <span className="text-xs font-bold text-[#4a453e] px-1">
+                                    {item.quantity}
+                                  </span>
+                                  <button
+                                    onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                                    className="text-[#8c827a] hover:text-[#2c2722] p-0.5 cursor-pointer"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         ))}
                       </div>
-
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#e5dfd5]">
-                        <span className="text-xs font-extrabold text-[#2c2722]">
-                          {(item.totalPrice * item.quantity).toLocaleString('vi-VN')} đ
-                        </span>
-
-                        <div className="flex items-center gap-2 bg-white rounded-lg border border-[#e5dfd5] px-1.5 py-0.5">
-                          <button
-                            onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                            className="text-[#8c827a] hover:text-[#2c2722] p-0.5 cursor-pointer"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="text-xs font-bold text-[#4a453e] px-1">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                            className="text-[#8c827a] hover:text-[#2c2722] p-0.5 cursor-pointer"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
 
                 {/* Delivery Form */}
-                <div className="pt-4 border-t border-[#e5dfd5] space-y-3">
+                <div className="pt-3 border-t border-[#e5dfd5] space-y-3">
                   <h4 className="text-xs font-bold text-[#2c2722] uppercase tracking-wider flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-[#7d9d85]" />
                     Thông tin giao hàng
@@ -302,9 +372,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <span>{subtotal.toLocaleString('vi-VN')} đ</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Phí giao hàng:</span>
-                  <span>{deliveryFee.toLocaleString('vi-VN')} đ</span>
+                  <span>Phí giao hàng cơ bản:</span>
+                  <span>{baseDeliveryFee.toLocaleString('vi-VN')} đ</span>
                 </div>
+                {isMultiStore && (
+                  <div className="flex justify-between text-amber-800 font-medium">
+                    <span>Phụ phí ghép {uniqueStores.length} quán:</span>
+                    <span>+{multiStoreExtraFee.toLocaleString('vi-VN')} đ</span>
+                  </div>
+                )}
                 {discount > 0 && (
                   <div className="flex justify-between text-[#5e7e66] font-semibold">
                     <span>Ưu đãi thành viên:</span>
