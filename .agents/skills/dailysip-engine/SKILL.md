@@ -1,99 +1,86 @@
 ---
 name: dailysip-engine
 description: >-
-  Specialized skill for developing, maintaining, and extending the DailySip project: an AI-driven personalized drink and food recommendation system based on user mood, body status, preferences, allergies, GPS store routing, and delivery ordering. Use when adding drinks or stores, tweaking recommendation scoring algorithms, modifying Gemini prompts, managing cart and order workflows, or expanding health tracking.
+  Core fullstack runbook for DailySip Vietnam. Use when starting, building, running, debugging, or extending the Express + Vite + TSX application, environment variables, or global architecture.
 ---
 
-# DailySip Engine — Developer & Assistant Runbook
+# DailySip Engine — Fullstack Architecture & Dev SOP
 
-This skill provides step-by-step guidance, standard operating procedures (SOP), and architecture rules for developing, maintaining, and extending the **DailySip Vietnam** application.
+DailySip Vietnam is an AI-powered personalized beverage recommendation and delivery web application built with Express, Vite, React 19, Tailwind CSS v4, and Google Gemini AI.
 
----
-
-## 1. Quick Start & Development Commands
-
-DailySip uses an integrated Express + Vite + TSX architecture.
+## 1. Quick Commands
 
 ```bash
 # Install dependencies
 npm install
 
-# Run full-stack dev server (Express backend + Vite HMR on http://localhost:3000)
+# Dev server (Express + Vite HMR on http://localhost:3000)
 npm run dev
 
-# Check TypeScript typing errors
+# Cloudflare tunnel for external mobile testing
+npm run tunnel
+
+# Check TypeScript types (zero tolerance)
 npm run lint
 
-# Build for production
+# Production build
 npm run build
+npm start
 ```
 
----
+## 2. Environment Variables (.env / .env.local)
 
-## 2. Core Architecture & Workflow Map
+| Variable | Required | Description |
+| :--- | :--- | :--- |
+| `GEMINI_API_KEY` | Optional | Google Gemini API key. If absent, system automatically uses intelligent heuristic fallbacks. |
+| `VITE_SUPABASE_URL` | Optional | Supabase Project URL. Enables cloud DB sync. |
+| `VITE_SUPABASE_ANON_KEY` | Optional | Supabase Anon Public Key. |
+| `PORT` | Optional | Server port (default `3000`). |
 
-```mermaid
-graph LR
-    A[User Input: CheckInSurvey] --> B[POST /api/recommendations]
-    B --> C[Hard Filter: Allergies & Constraints]
-    C --> D[Scoring Matrix: Mood & Body Match]
-    D --> E[Gemini 3.7 Flash: Nutritional Reasoning]
-    E --> F[Top 5 Drinks + AI Advice]
-    F --> G[Store Matching & Haversine Distance]
-    G --> H[Customization & Cart / Delivery Order]
+## 3. Directory & Component Layout
+
+```text
+module_3/
+├── server.ts                    # Express backend + Vite middleware + Gemini AI endpoints
+├── index.html                   # HTML entry point (viewport, fonts, meta)
+├── package.json                 # Dependencies & scripts (React 19, @google/genai, @supabase/supabase-js)
+├── supabase_schema.sql          # Cloud PostgreSQL table definitions & RLS
+└── src/
+    ├── main.tsx                 # React DOM mount point
+    ├── App.tsx                  # Global State Coordinator (tabs, modals, cart, user session)
+    ├── types.ts                 # Centralized TypeScript interfaces & models
+    ├── index.css                # Tailwind CSS v4 directives & custom theme rules
+    ├── lib/supabase.ts          # Supabase client singleton & connection status check
+    ├── services/dbService.ts    # Persistence layer (Dual-mode: Supabase Cloud <-> Local Mock)
+    ├── data/mockData.ts         # Catalog: DRINKS_DATABASE, STORES_DATABASE, presets
+    └── components/              # UI Components & feature modals
+        ├── MobileDeviceFrame.tsx     # Frame wrapper: mobile mock vs responsive desktop
+        ├── MobileHeader.tsx          # Top bar: logo, location picker, theme toggle, cart badge
+        ├── MobileBottomNav.tsx       # Bottom bar: 5 navigation tabs
+        ├── CheckInSurvey.tsx         # Mood, body status, preferences, vision upload
+        ├── RecommendationView.tsx    # Top 5 recommended drinks + AI nutritional advice
+        ├── StoreMapView.tsx          # GPS store list, distances, delivery routing
+        ├── StoreDetailModal.tsx      # Detailed store view with in-store beverage menu
+        ├── CartDrawer.tsx            # Cart item list, voucher input, payment checkout
+        ├── DrinkCustomizationModal.tsx # Size, sugar, ice, temperature, topping customizer
+        ├── OrderTrackingModal.tsx    # Live simulation of 5-stage delivery pipeline
+        ├── HydrationTracker.tsx      # Daily water intake tracking & confetti celebration
+        ├── NutritionistChatModal.tsx # Gemini AI Sommelier Chatbot
+        ├── HomeRecipeModal.tsx       # AI DIY recipe generator from available ingredients
+        ├── UserProfileModal.tsx      # Profile, bank cards, past orders, membership rank
+        └── AuthScreen.tsx            # Login & registration modal with dual-mode support
 ```
 
-### Key Files:
-- [server.ts](file:///c:/Users/bet/hehe/module_3/server.ts): Express API endpoints (`/api/recommendations`, `/api/stores`, `/api/nutritionist-chat`, `/api/home-recipe`).
-- [src/types.ts](file:///c:/Users/bet/hehe/module_3/src/types.ts): All TypeScript models and interfaces.
-- [src/data/mockData.ts](file:///c:/Users/bet/hehe/module_3/src/data/mockData.ts): Drink catalog, Store locations (GPS), options, and presets.
-- [src/App.tsx](file:///c:/Users/bet/hehe/module_3/src/App.tsx): State coordinator, modals, cart, and tab routing.
+## 4. Global State Architecture (`src/App.tsx`)
 
----
+- **Tab Routing**: `activeTab` (`checkin` | `recommendations` | `stores` | `history` | `sommelier`). Persisted in `localStorage['dailysip_active_tab']`.
+- **Theme**: `isDarkMode` toggles class `.dark` on document root. Persisted in `localStorage['dailysip_theme']`.
+- **Cart**: `cart` array of `CartItem`. Stored in React state and synced across modals.
+- **User Session**: `userProfile` (default `DEFAULT_GUEST_PROFILE`). Updated upon login/register via `dbService`.
+- **Drink Recommendations**: `recommendedDrinks` + `aiAdvice`. Cached in `localStorage['dailysip_recommended_drinks']`.
 
-## 3. Standard Procedures
+## 5. Coding & Contribution Rules
 
-### A. Adding a New Drink to the Catalog
-When adding a new drink to `src/data/mockData.ts`:
-1. Ensure all required fields from `Drink` interface in `src/types.ts` are populated.
-2. Include accurate safety tags:
-   - `containsLactose` (true/false)
-   - `containsCaffeine` (true/false)
-   - `containsNuts` (true/false)
-   - `isVegan` (true/false)
-   - `isHotAvailable` & `isColdAvailable`
-3. Define tags matching available `MoodType`, `BodyStatusType`, and `GoalType`.
-4. Include a Vietnamese DIY recipe (`homeRecipe`) and suggested healthy toppings.
-5. Map the drink's `id` to relevant stores in `STORES_DATABASE` under `menuItems`.
-
-### B. Adjusting Recommendation & Scoring Logic
-Scoring is executed in `server.ts` under `/api/recommendations`:
-1. **Hard Filters (Safety)**:
-   - Check allergies (`lactose`, `caffeine`, `peanuts`, `vegan`).
-   - Check sensitive body conditions (e.g. `caffeine_sensitive` excludes caffeinated items).
-2. **Matching Weight Matrix**:
-   - `mood`: +25 points per match.
-   - `bodyCondition`: +35 to +50 points for direct symptom relief.
-   - `preference`: +15 to +25 points (e.g. `low_sugar`, `no_sugar`).
-   - `goal`: +30 points.
-3. Reference the complete scoring rules in [recommendation-rules.md](./references/recommendation-rules.md).
-
-### C. Modifying Gemini AI Prompts
-When updating Gemini prompts in `server.ts`:
-- Use model identifier `gemini-3.7-flash`.
-- Always provide structured JSON output with `responseMimeType: 'application/json'` when extracting structured fields (`whyItFits`, `wellnessTip`, `caffeineAdvice`, `sugarAdvice`).
-- Ensure fallback heuristics remain intact in case `GEMINI_API_KEY` is not provided or network times out.
-
-### D. Adding / Updating Store Coordinates & GPS Routing
-- Stores are defined in `STORES_DATABASE`.
-- Coordinates must use valid `latitude` and `longitude` in decimal format (e.g. HCMC: `10.7725, 106.6983`).
-- Distances are calculated dynamically using the Haversine formula (`calculateDistance`).
-- Always maintain external deep-links (`grabFoodUrl`, `shopeeFoodUrl`, `googleMapsUrl`).
-
----
-
-## 4. Reference Documentation
-
-For detailed specifications, consult the reference guides:
-- [Recommendation Rules & Heuristics Matrix](./references/recommendation-rules.md)
-- [Data Models & Schema Specifications](./references/data-schemas.md)
+1. **TypeScript Integrity**: Run `npm run lint` (`tsc --noEmit`) before committing. Never use `any` without defensive fallbacks.
+2. **Offline-First Resilience**: All AI endpoints (`/api/recommendations`, `/api/analyze-vision`, `/api/nutritionist-chat`, `/api/home-recipe`) MUST have working heuristic fallback responses when `GEMINI_API_KEY` is missing or fails.
+3. **Database Dual-Mode**: Every database operation in `src/services/dbService.ts` MUST check `isSupabaseConfigured`. If false or failed, fallback transparently to local mock data.
